@@ -16,11 +16,9 @@ if database_url:
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
-    # Desarrollo/Render (SQLite) - Usar directorio temporal
-    import tempfile
-    db_path = os.path.join(tempfile.gettempdir(), 'viaje.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    print(f"🗄️  Usando SQLite en: {db_path}")
+    # Desarrollo (SQLite) - Usar instancia local
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/viaje.db'
+    print("🗄️  Usando SQLite en desarrollo")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
