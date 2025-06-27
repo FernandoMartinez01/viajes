@@ -1,0 +1,758 @@
+<!-- Modal para agregar gasto -->
+<div id="gasto-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Agregar Gasto</h3>
+            <button class="close-btn" onclick="closeModal('gasto-modal')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form id="gasto-form" class="modal-form">
+            <div class="form-group">
+                <label for="gasto-categoria" class="form-label">Categoría</label>
+                <select id="gasto-categoria" name="categoria" class="form-input" required>
+                    <option value="">Seleccionar categoría</option>
+                    <option value="transporte">Transporte</option>
+                    <option value="hospedaje">Hospedaje</option>
+                    <option value="comida">Comida</option>
+                    <option value="entretenimiento">Entretenimiento</option>
+                    <option value="compras">Compras</option>
+                    <option value="otros">Otros</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="gasto-descripcion" class="form-label">Descripción</label>
+                <input type="text" id="gasto-descripcion" name="descripcion" class="form-input" 
+                       placeholder="Ej: Cena en restaurante" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="gasto-monto" class="form-label">Monto</label>
+                    <input type="number" id="gasto-monto" name="monto" class="form-input" 
+                           placeholder="0.00" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gasto-fecha" class="form-label">Fecha</label>
+                    <input type="date" id="gasto-fecha" name="fecha" class="form-input" required>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('gasto-modal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Agregar Gasto
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para agregar actividad -->
+<div id="actividad-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Agregar Actividad</h3>
+            <button class="close-btn" onclick="closeModal('actividad-modal')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form id="actividad-form" class="modal-form">
+            <div class="form-group">
+                <label for="actividad-destino" class="form-label">Destino</label>
+                <select id="actividad-destino" name="destino" class="form-input" required>
+                    <option value="">Seleccionar destino</option>
+                    {% for parada in viaje.paradas %}
+                    <option value="{{ parada.destino }}">{{ parada.destino }}</option>
+                    {% endfor %}
+                    <option value="general">General (no específico de un destino)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="actividad-nombre" class="form-label">Nombre</label>
+                <input type="text" id="actividad-nombre" name="nombre" class="form-input" 
+                       placeholder="Ej: Visitar museo" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="actividad-fecha" class="form-label">Fecha</label>
+                    <input type="date" id="actividad-fecha" name="fecha" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="actividad-hora" class="form-label">Hora (opcional)</label>
+                    <input type="time" id="actividad-hora" name="hora" class="form-input">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="actividad-ubicacion" class="form-label">Ubicación (opcional)</label>
+                <input type="text" id="actividad-ubicacion" name="ubicacion" class="form-input" 
+                       placeholder="Ej: Museo Nacional">
+            </div>
+            
+            <div class="form-group">
+                <label for="actividad-descripcion" class="form-label">Descripción (opcional)</label>
+                <textarea id="actividad-descripcion" name="descripcion" class="form-textarea" 
+                         placeholder="Detalles adicionales..."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('actividad-modal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Agregar Actividad
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para agregar documento -->
+<div id="documento-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Agregar Documento</h3>
+            <button class="close-btn" onclick="closeModal('documento-modal')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form id="documento-form" class="modal-form">
+            <div class="form-group">
+                <label for="documento-tipo" class="form-label">Tipo</label>
+                <select id="documento-tipo" name="tipo" class="form-input" required>
+                    <option value="">Seleccionar tipo</option>
+                    <option value="pasaporte">Pasaporte</option>
+                    <option value="visa">Visa</option>
+                    <option value="reserva_hotel">Reserva de Hotel</option>
+                    <option value="reserva_vuelo">Reserva de Vuelo</option>
+                    <option value="seguro">Seguro de Viaje</option>
+                    <option value="otros">Otros</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="documento-nombre" class="form-label">Nombre</label>
+                <input type="text" id="documento-nombre" name="nombre" class="form-input" 
+                       placeholder="Ej: Pasaporte Personal" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="documento-numero" class="form-label">Número (opcional)</label>
+                <input type="text" id="documento-numero" name="numero" class="form-input" 
+                       placeholder="Ej: A12345678">
+            </div>
+            
+            <div class="form-group">
+                <label for="documento-vencimiento" class="form-label">Fecha de vencimiento (opcional)</label>
+                <input type="date" id="documento-vencimiento" name="fecha_vencimiento" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label for="documento-notas" class="form-label">Notas (opcional)</label>
+                <textarea id="documento-notas" name="notas" class="form-textarea" 
+                         placeholder="Información adicional..."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('documento-modal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Agregar Documento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para agregar transporte -->
+<div id="transporte-modal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Agregar Transporte</h3>
+            <button class="close-btn" onclick="closeModal('transporte-modal')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form id="transporte-form" class="modal-form">
+            <div class="form-group">
+                <label for="transporte-tipo" class="form-label">Tipo de transporte</label>
+                <select id="transporte-tipo" name="tipo" class="form-input" required>
+                    <option value="vuelo">✈️ Vuelo</option>
+                    <option value="tren">🚄 Tren</option>
+                    <option value="bus">🚌 Bus</option>
+                    <option value="auto">🚗 Auto</option>
+                    <option value="ferry">⛴️ Ferry</option>
+                    <option value="otro">🚀 Otro</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="transporte-origen" class="form-label">Origen</label>
+                    <input type="text" id="transporte-origen" name="origen" class="form-input" 
+                           placeholder="Ciudad o aeropuerto de origen" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transporte-destino" class="form-label">Destino</label>
+                    <input type="text" id="transporte-destino" name="destino" class="form-input" 
+                           placeholder="Ciudad o aeropuerto de destino" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="transporte-codigo" class="form-label">Código de reserva</label>
+                <input type="text" id="transporte-codigo" name="codigo_reserva" class="form-input" 
+                       placeholder="ABC123 (opcional)">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="transporte-fecha-salida" class="form-label">Fecha salida</label>
+                    <input type="date" id="transporte-fecha-salida" name="fecha_salida" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transporte-hora-salida" class="form-label">Hora salida</label>
+                    <input type="time" id="transporte-hora-salida" name="hora_salida" class="form-input">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="transporte-fecha-llegada" class="form-label">Fecha llegada</label>
+                    <input type="date" id="transporte-fecha-llegada" name="fecha_llegada" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="transporte-hora-llegada" class="form-label">Hora llegada</label>
+                    <input type="time" id="transporte-hora-llegada" name="hora_llegada" class="form-input">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="transporte-aerolinea" class="form-label">Aerolínea/Empresa</label>
+                    <input type="text" id="transporte-aerolinea" name="aerolinea" class="form-input" 
+                           placeholder="Ej: LATAM, Iberia (opcional)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="transporte-vuelo" class="form-label">Número vuelo/servicio</label>
+                    <input type="text" id="transporte-vuelo" name="numero_vuelo" class="form-input" 
+                           placeholder="Ej: LA123 (opcional)">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="transporte-terminal" class="form-label">Terminal</label>
+                    <input type="text" id="transporte-terminal" name="terminal" class="form-input" 
+                           placeholder="Ej: T1, Terminal A (opcional)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="transporte-puerta" class="form-label">Puerta</label>
+                    <input type="text" id="transporte-puerta" name="puerta" class="form-input" 
+                           placeholder="Ej: A15 (opcional)">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="transporte-asiento" class="form-label">Asiento</label>
+                <input type="text" id="transporte-asiento" name="asiento" class="form-input" 
+                       placeholder="Ej: 12A (opcional)">
+            </div>
+            
+            <div class="form-group">
+                <label for="transporte-notas" class="form-label">Notas adicionales</label>
+                <textarea id="transporte-notas" name="notas" class="form-textarea" 
+                         placeholder="Información adicional, equipaje, conexiones..."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('transporte-modal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-icons">flight_takeoff</span>
+                    Agregar Transporte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para agregar alojamiento -->
+<div id="alojamiento-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Agregar Alojamiento</h3>
+            <button class="close-btn" onclick="closeModal('alojamiento-modal')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form id="alojamiento-form" class="modal-form">
+            <div class="form-group">
+                <label for="alojamiento-destino" class="form-label">Destino</label>
+                <select id="alojamiento-destino" name="destino" class="form-input" required>
+                    <option value="">Seleccionar destino</option>
+                    <option value="general">General</option>
+                    {% for parada in viaje.paradas %}
+                    <option value="{{ parada.destino.lower() }}">{{ parada.destino }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="alojamiento-nombre" class="form-label">Nombre del alojamiento</label>
+                <input type="text" id="alojamiento-nombre" name="nombre" class="form-input" 
+                       placeholder="Ej: Hotel Plaza, Airbnb Centro" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="alojamiento-direccion" class="form-label">Dirección</label>
+                <input type="text" id="alojamiento-direccion" name="direccion" class="form-input" 
+                       placeholder="Dirección completa del alojamiento" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="alojamiento-fecha-entrada" class="form-label">Fecha entrada</label>
+                    <input type="date" id="alojamiento-fecha-entrada" name="fecha_entrada" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="alojamiento-checkin" class="form-label">Horario check-in</label>
+                    <input type="time" id="alojamiento-checkin" name="horario_checkin" class="form-input" value="15:00" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="alojamiento-fecha-salida" class="form-label">Fecha salida</label>
+                    <input type="date" id="alojamiento-fecha-salida" name="fecha_salida" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="alojamiento-checkout" class="form-label">Horario check-out</label>
+                    <input type="time" id="alojamiento-checkout" name="horario_checkout" class="form-input" value="11:00" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-checkbox">
+                    <input type="checkbox" id="alojamiento-desayuno" name="incluye_desayuno">
+                    <span class="checkmark"></span>
+                    Incluye desayuno
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label for="alojamiento-confirmacion" class="form-label">Número de confirmación (opcional)</label>
+                <input type="text" id="alojamiento-confirmacion" name="numero_confirmacion" class="form-input" 
+                       placeholder="Código de reserva o confirmación">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="alojamiento-pin" class="form-label">Código PIN (opcional)</label>
+                    <input type="text" id="alojamiento-pin" name="codigo_pin" class="form-input" 
+                           placeholder="PIN o código de acceso">
+                </div>
+                
+                <div class="form-group">
+                    <label for="alojamiento-checkin-num" class="form-label">N° Check-in (opcional)</label>
+                    <input type="text" id="alojamiento-checkin-num" name="numero_checkin" class="form-input" 
+                           placeholder="Número de check-in">
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('alojamiento-modal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Agregar Alojamiento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para agregar parada -->
+<div id="parada-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Agregar Parada</h3>
+            <button class="close-btn" onclick="closeModal('parada-modal')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form id="parada-form" class="modal-form">
+            <div class="form-group">
+                <label for="parada-destino" class="form-label">Destino</label>
+                <input type="text" id="parada-destino" name="destino" class="form-input" 
+                       placeholder="Ej: París, Madrid, Roma" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="parada-fecha-llegada" class="form-label">Fecha llegada</label>
+                    <input type="date" id="parada-fecha-llegada" name="fecha_llegada" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="parada-fecha-salida" class="form-label">Fecha salida</label>
+                    <input type="date" id="parada-fecha-salida" name="fecha_salida" class="form-input" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="parada-notas" class="form-label">Notas (opcional)</label>
+                <textarea id="parada-notas" name="notas" class="form-textarea" 
+                         placeholder="Información adicional sobre esta parada..."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('parada-modal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Agregar Parada
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para editar parada -->
+<div id="editar-parada-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Editar Parada</h3>
+            <button class="close-btn" onclick="closeModal('editar-parada-modal')">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form id="editar-parada-form" class="modal-form">
+            <input type="hidden" id="editar-parada-id" name="parada_id">
+            
+            <div class="form-group">
+                <label for="editar-parada-destino" class="form-label">Destino</label>
+                <input type="text" id="editar-parada-destino" name="destino" class="form-input" 
+                       placeholder="Ej: París, Madrid, Roma" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editar-parada-fecha-llegada" class="form-label">Fecha llegada</label>
+                    <input type="date" id="editar-parada-fecha-llegada" name="fecha_llegada" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editar-parada-fecha-salida" class="form-label">Fecha salida</label>
+                    <input type="date" id="editar-parada-fecha-salida" name="fecha_salida" class="form-input" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="editar-parada-notas" class="form-label">Notas (opcional)</label>
+                <textarea id="editar-parada-notas" name="notas" class="form-textarea" 
+                         placeholder="Información adicional sobre esta parada..."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editar-parada-modal')">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Funcionalidad de modales
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+    document.body.classList.add('modal-open');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+    document.body.classList.remove('modal-open');
+}
+
+// Cerrar modal al hacer click fuera
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        closeModal(e.target.id);
+    }
+});
+
+// Formulario de gasto
+document.getElementById('gasto-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch(`/viaje/${viajeId}/gasto`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Gasto agregado exitosamente', 'success');
+            closeModal('gasto-modal');
+            location.reload();
+        } else {
+            showToast('Error al agregar gasto', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+    }
+});
+
+// Formulario de actividad
+document.getElementById('actividad-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch(`/viaje/${viajeId}/actividad`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Actividad agregada exitosamente', 'success');
+            closeModal('actividad-modal');
+            location.reload();
+        } else {
+            showToast('Error al agregar actividad', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+    }
+});
+
+// Formulario de documento
+document.getElementById('documento-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch(`/viaje/${viajeId}/documento`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Documento agregado exitosamente', 'success');
+            closeModal('documento-modal');
+            location.reload();
+        } else {
+            showToast('Error al agregar documento', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+    }
+});
+
+// Manejar envío de formulario de transporte
+document.getElementById('transporte-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    showLoading();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch(`/viaje/${viajeId}/transporte`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('¡Transporte agregado exitosamente!', 'success');
+            closeModal('transporte-modal');
+            this.reset();
+            location.reload();
+        } else {
+            showToast('Error al agregar transporte', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+    } finally {
+        hideLoading();
+    }
+});
+
+// Formulario de alojamiento
+document.getElementById('alojamiento-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    showLoading();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    // Convertir checkbox a boolean
+    data.incluye_desayuno = formData.has('incluye_desayuno');
+    
+    try {
+        const response = await fetch(`/viaje/${viajeId}/alojamiento`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('¡Alojamiento agregado exitosamente!', 'success');
+            closeModal('alojamiento-modal');
+            this.reset();
+            location.reload();
+        } else {
+            showToast('Error al agregar alojamiento', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+    } finally {
+        hideLoading();
+    }
+});
+
+// Formulario de parada
+document.getElementById('parada-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    showLoading();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch(`/viaje/${viajeId}/parada`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('¡Parada agregada exitosamente!', 'success');
+            closeModal('parada-modal');
+            this.reset();
+            location.reload();
+        } else {
+            showToast('Error al agregar parada', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+    } finally {
+        hideLoading();
+    }
+});
+
+// Formulario de editar parada
+document.getElementById('editar-parada-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    showLoading();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    const paradaId = data.parada_id;
+    
+    try {
+        const response = await fetch(`/parada/${paradaId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('¡Parada actualizada exitosamente!', 'success');
+            closeModal('editar-parada-modal');
+            location.reload();
+        } else {
+            showToast('Error al actualizar parada', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+    } finally {
+        hideLoading();
+    }
+});
+
+// Establecer fecha de hoy por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('gasto-fecha').value = hoy;
+    document.getElementById('actividad-fecha').value = hoy;
+});
+</script>

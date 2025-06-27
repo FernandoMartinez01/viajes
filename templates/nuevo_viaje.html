@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Viaje{% endblock %}
+{% block header_title %}Nuevo Viaje{% endblock %}
+
+{% block content %}
+<div class="container">
+    <form id="nuevo-viaje-form" class="form-card">
+        <div class="form-group">
+            <label for="nombre" class="form-label">
+                <span class="material-icons">luggage</span>
+                Nombre del viaje
+            </label>
+            <input type="text" id="nombre" name="nombre" class="form-input" 
+                   placeholder="Ej: Viaje por Europa 2025" required>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="fecha_inicio" class="form-label">
+                    <span class="material-icons">flight_takeoff</span>
+                    Fecha de inicio
+                </label>
+                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="fecha_fin" class="form-label">
+                    <span class="material-icons">flight_land</span>
+                    Fecha de fin
+                </label>
+                <input type="date" id="fecha_fin" name="fecha_fin" class="form-input" required>
+            </div>
+        </div>
+
+        <!-- Sección de paradas -->
+        <div class="paradas-section">
+            <div class="section-header">
+                <h3>Destinos del viaje</h3>
+                <button type="button" class="btn btn-secondary btn-small" onclick="agregarParada()">
+                    <span class="material-icons">add_location</span>
+                    Agregar destino
+                </button>
+            </div>
+            
+            <div id="paradas-container">
+                <!-- Las paradas se agregan aquí dinámicamente -->
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="notas" class="form-label">
+                <span class="material-icons">note</span>
+                Notas del viaje (opcional)
+            </label>
+            <textarea id="notas" name="notas" class="form-textarea" 
+                     placeholder="Describe tu viaje, objetivos, cosas importantes..."></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="history.back()">
+                Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <span class="material-icons">add</span>
+                Crear Viaje
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let paradaCount = 0;
+let paradasData = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('nuevo-viaje-form');
+    const fechaInicio = document.getElementById('fecha_inicio');
+    const fechaFin = document.getElementById('fecha_fin');
+    
+    // Establecer fecha mínima como hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    fechaInicio.min = hoy;
+    fechaFin.min = hoy;
+    
+    // Validar que la fecha de fin sea posterior a la de inicio
+    fechaInicio.addEventListener('change', function() {
+        fechaFin.min = this.value;
+        if (fechaFin.value && fechaFin.value < this.value) {
+            fechaFin.value = this.value;
+        }
+        actualizarFechasParadas();
+    });
+    
+    fechaFin.addEventListener('change', function() {
+        actualizarFechasParadas();
+    });
+    
+    // Agregar primera parada automáticamente
+    agregarParada();
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (paradasData.length === 0) {
+            showToast('Agrega al menos un destino', 'error');
+            return;
+        }
+        
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        data.paradas = paradasData;
+        
+        showLoading();
+        
+        try {
+            const response = await fetch('/nuevo-viaje', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast('¡Viaje creado exitosamente!', 'success');
+                setTimeout(() => {
+                    window.location.href = `/viaje/${result.viaje_id}`;
+                }, 1000);
+            } else {
+                showToast('Error al crear el viaje', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Error de conexión', 'error');
+        } finally {
+            hideLoading();
+        }
+    });
+});
+
+function agregarParada() {
+    const container = document.getElementById('paradas-container');
+    const paradaId = `parada-${paradaCount}`;
+    
+    const paradaHtml = `
+        <div class="parada-item" id="${paradaId}" data-orden="${paradaCount}">
+            <div class="parada-header">
+                <div class="parada-numero">
+                    <span class="numero">${paradaCount + 1}</span>
+                </div>
+                <h4>Destino ${paradaCount + 1}</h4>
+                <div class="parada-actions">
+                    ${paradaCount > 0 ? '<button type="button" class="btn-icon" onclick="moverParada(' + paradaCount + ', -1)"><span class="material-icons">keyboard_arrow_up</span></button>' : ''}
+                    ${paradaCount > 0 ? '<button type="button" class="btn-icon" onclick="eliminarParada(' + paradaCount + ')"><span class="material-icons">delete</span></button>' : ''}
+                </div>
+            </div>
+            
+            <div class="parada-content">
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="material-icons">place</span>
+                        Destino
+                    </label>
+                    <input type="text" class="form-input parada-destino" 
+                           placeholder="Ej: París, Francia" required
+                           onchange="actualizarParada(${paradaCount})">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Llegada</label>
+                        <input type="date" class="form-input parada-llegada" required
+                               onchange="actualizarParada(${paradaCount})">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Salida</label>
+                        <input type="date" class="form-input parada-salida" required
+                               onchange="actualizarParada(${paradaCount})">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="material-icons">note</span>
+                        Notas (opcional)
+                    </label>
+                    <textarea class="form-textarea parada-notas" 
+                             placeholder="Hoteles, actividades específicas..."
+                             onchange="actualizarParada(${paradaCount})"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', paradaHtml);
+    
+    // Inicializar datos de la parada
+    paradasData.push({
+        destino: '',
+        fecha_llegada: '',
+        fecha_salida: '',
+        notas: ''
+    });
+    
+    actualizarFechasParadas();
+    paradaCount++;
+}
+
+function actualizarParada(index) {
+    const parada = document.getElementById(`parada-${index}`);
+    if (!parada) return;
+    
+    paradasData[index] = {
+        destino: parada.querySelector('.parada-destino').value,
+        fecha_llegada: parada.querySelector('.parada-llegada').value,
+        fecha_salida: parada.querySelector('.parada-salida').value,
+        notas: parada.querySelector('.parada-notas').value
+    };
+}
+
+function eliminarParada(index) {
+    const parada = document.getElementById(`parada-${index}`);
+    if (parada) {
+        parada.remove();
+        paradasData.splice(index, 1);
+        renumerarParadas();
+    }
+}
+
+function moverParada(index, direccion) {
+    const nuevoIndex = index + direccion;
+    if (nuevoIndex < 0 || nuevoIndex >= paradasData.length) return;
+    
+    // Intercambiar en el array
+    [paradasData[index], paradasData[nuevoIndex]] = [paradasData[nuevoIndex], paradasData[index]];
+    
+    // Recrear visualmente
+    recrearParadas();
+}
+
+function renumerarParadas() {
+    const paradas = document.querySelectorAll('.parada-item');
+    paradas.forEach((parada, index) => {
+        parada.querySelector('.numero').textContent = index + 1;
+        parada.querySelector('h4').textContent = `Destino ${index + 1}`;
+    });
+}
+
+function recrearParadas() {
+    const container = document.getElementById('paradas-container');
+    container.innerHTML = '';
+    
+    const tempParadas = [...paradasData];
+    paradasData = [];
+    paradaCount = 0;
+    
+    tempParadas.forEach(paradaData => {
+        agregarParada();
+        const parada = document.getElementById(`parada-${paradaCount - 1}`);
+        parada.querySelector('.parada-destino').value = paradaData.destino;
+        parada.querySelector('.parada-llegada').value = paradaData.fecha_llegada;
+        parada.querySelector('.parada-salida').value = paradaData.fecha_salida;
+        parada.querySelector('.parada-notas').value = paradaData.notas;
+        actualizarParada(paradaCount - 1);
+    });
+}
+
+function actualizarFechasParadas() {
+    const fechaInicio = document.getElementById('fecha_inicio').value;
+    const fechaFin = document.getElementById('fecha_fin').value;
+    
+    if (!fechaInicio || !fechaFin) return;
+    
+    const paradas = document.querySelectorAll('.parada-item');
+    paradas.forEach(parada => {
+        const llegada = parada.querySelector('.parada-llegada');
+        const salida = parada.querySelector('.parada-salida');
+        
+        llegada.min = fechaInicio;
+        llegada.max = fechaFin;
+        salida.min = fechaInicio;
+        salida.max = fechaFin;
+        
+        // Validar que llegada sea antes que salida
+        llegada.addEventListener('change', function() {
+            salida.min = this.value;
+            if (salida.value && salida.value < this.value) {
+                salida.value = this.value;
+            }
+        });
+    });
+}
+</script>
+{% endblock %}

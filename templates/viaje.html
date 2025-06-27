@@ -1,0 +1,857 @@
+{% extends "base.html" %}
+
+{% block title %}{{ viaje.destino }}{% endblock %}
+{% block header_title %}{{ viaje.destino }}{% endblock %}
+
+{% block header_actions %}
+<button class="icon-btn" onclick="shareViaje()">
+    <span class="material-icons">share</span>
+</button>
+<button class="icon-btn btn-danger" onclick="confirmarEliminarViaje()">
+    <span class="material-icons">delete</span>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Información del viaje -->
+    <div class="viaje-info-card">
+        <div class="viaje-header">
+            <h2>{{ viaje.nombre }}</h2>
+            <div class="viaje-fechas">
+                <span class="material-icons">date_range</span>
+                {{ viaje.fecha_inicio.strftime('%d/%m/%Y') }} - {{ viaje.fecha_fin.strftime('%d/%m/%Y') }}
+            </div>
+        </div>
+        
+        <!-- Itinerario de paradas -->
+        {% if viaje.paradas %}
+        <div class="itinerario-section">
+            <div class="section-header-inline">
+                <h3>Itinerario</h3>
+                <div class="header-actions-group">
+                    <small class="reorder-hint">
+                        <span class="material-icons">schedule</span>
+                        Ordenado automáticamente por fecha de llegada
+                    </small>
+                    <button class="btn btn-secondary btn-small" onclick="reordenarPorFecha()" title="Reordenar por fechas">
+                        <span class="material-icons">sort</span>
+                        Reordenar
+                    </button>
+                    <button class="btn btn-primary btn-small" onclick="openModal('parada-modal')">
+                        <span class="material-icons">add</span>
+                        Agregar parada
+                    </button>
+                </div>
+            </div>
+            <div class="itinerario-timeline" id="itinerario-timeline">
+                {% for parada in viaje.paradas %}
+                <div class="timeline-item" data-parada-id="{{ parada.id }}" data-orden="{{ parada.orden }}">
+                    <div class="timeline-marker">
+                        <span class="timeline-number">{{ parada.orden }}</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="parada-header">
+                            <div class="parada-title-section">
+                                <h4 class="parada-destino">{{ parada.destino }}</h4>
+                            </div>
+                            <div class="parada-actions">
+                                <button class="icon-btn btn-small" onclick="editarParada({{ parada.id }}, '{{ parada.destino|e }}', '{{ parada.fecha_llegada }}', '{{ parada.fecha_salida }}', '{{ parada.notas|e }}')" title="Editar parada">
+                                    <span class="material-icons">edit</span>
+                                </button>
+                                <button class="icon-btn btn-small btn-danger" onclick="eliminarParada({{ parada.id }}, '{{ parada.destino|e }}')" title="Eliminar parada">
+                                    <span class="material-icons">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="parada-fechas">
+                            {{ parada.fecha_llegada.strftime('%d/%m') }} - {{ parada.fecha_salida.strftime('%d/%m/%Y') }}
+                            <span class="parada-duracion">
+                                ({{ (parada.fecha_salida - parada.fecha_llegada).days + 1 }} días)
+                            </span>
+                        </div>
+                        {% if parada.notas %}
+                        <p class="parada-notas">{{ parada.notas }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Mapa del viaje -->
+        {% if viaje.paradas %}
+        <div class="mapa-section">
+            <h3>
+                <span class="material-icons">map</span>
+                Ruta del viaje
+            </h3>
+            <div id="mapa-viaje" class="mapa-container"></div>
+            <p class="mapa-info">
+                <span class="material-icons">info</span>
+                Toca los marcadores para ver información de cada parada
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Contador de gastos -->
+        {% if viaje.gastos %}
+        <div class="gastos-counter-section">
+            <h3>
+                <span class="material-icons">account_balance_wallet</span>
+                Total gastado
+            </h3>
+            <div class="counter-visual">
+                <div class="total-amount">
+                    <span class="currency">$</span>
+                    <span class="amount">${{ "%.2f"|format(viaje.presupuesto_gastado) }}</span>
+                </div>
+                <div class="gastos-breakdown">
+                    <div class="breakdown-item">
+                        <span class="count">{{ viaje.gastos|length }}</span>
+                        <span class="label">{{ 'gasto' if viaje.gastos|length == 1 else 'gastos' }}</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="count">${{ "%.0f"|format(viaje.presupuesto_gastado / viaje.gastos|length) if viaje.gastos|length > 0 else 0 }}</span>
+                        <span class="label">promedio</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if viaje.notas %}
+        <div class="notas-section">
+            <h3>Notas</h3>
+            <p>{{ viaje.notas }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabs de navegación -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="gastos">
+            <span class="material-icons">receipt</span>
+            Gastos
+        </button>
+        <button class="tab-btn" data-tab="actividades">
+            <span class="material-icons">event</span>
+            Actividades
+        </button>
+        <button class="tab-btn" data-tab="documentos">
+            <span class="material-icons">description</span>
+            Documentos
+        </button>
+        <button class="tab-btn" data-tab="transportes">
+            <span class="material-icons">flight</span>
+            Transporte
+        </button>
+        <button class="tab-btn" data-tab="alojamientos">
+            <span class="material-icons">hotel</span>
+            Alojamiento
+        </button>
+    </div>
+
+    <!-- Contenido de tabs -->
+    <div id="gastos" class="tab-content active">
+        <div class="section-header">
+            <h3>Gastos</h3>
+            <button class="btn btn-primary btn-small" onclick="openModal('gasto-modal')">
+                <span class="material-icons">add</span>
+                Agregar
+            </button>
+        </div>
+        
+        <div class="gastos-list">
+            {% for gasto in viaje.gastos %}
+            <div class="gasto-item">
+                <div class="gasto-info">
+                    <div class="gasto-categoria">{{ gasto.categoria.title() }}</div>
+                    <div class="gasto-descripcion">{{ gasto.descripcion }}</div>
+                    <div class="gasto-fecha">{{ gasto.fecha.strftime('%d/%m/%Y') }}</div>
+                </div>
+                <div class="gasto-monto">
+                    ${{ "%.2f"|format(gasto.monto) }}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <span class="material-icons">receipt</span>
+                <p>No hay gastos registrados</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="actividades" class="tab-content">
+        <div class="section-header">
+            <h3>Actividades</h3>
+            <button class="btn btn-primary btn-small" onclick="openModal('actividad-modal')">
+                <span class="material-icons">add</span>
+                Agregar
+            </button>
+        </div>
+        
+        <div class="actividades-list">
+            {% if actividades_agrupadas %}
+                {% for destino, actividades in actividades_agrupadas.items() %}
+                <div class="actividades-grupo">
+                    <h4 class="grupo-destino">
+                        <span class="material-icons">place</span>
+                        {{ destino.title() if destino != 'general' else 'Actividades Generales' }}
+                    </h4>
+                    
+                    {% for actividad in actividades %}
+                    <div class="actividad-item {{ 'completada' if actividad.completada else '' }}">
+                        <div class="actividad-checkbox">
+                            <input type="checkbox" {{ 'checked' if actividad.completada else '' }} 
+                                   data-actividad-id="{{ actividad.id }}" class="actividad-toggle">
+                        </div>
+                        <div class="actividad-info">
+                            <div class="actividad-nombre">{{ actividad.nombre }}</div>
+                            {% if actividad.ubicacion %}
+                            <div class="actividad-ubicacion">
+                                <span class="material-icons">location_on</span>
+                                {{ actividad.ubicacion }}
+                            </div>
+                            {% endif %}
+                            <div class="actividad-fecha">
+                                {{ actividad.fecha.strftime('%d/%m/%Y') }}
+                                {% if actividad.hora %}
+                                - {{ actividad.hora.strftime('%H:%M') }}
+                                {% endif %}
+                            </div>
+                            {% if actividad.descripcion %}
+                            <div class="actividad-descripcion">{{ actividad.descripcion }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="empty-state-small">
+                <span class="material-icons">event</span>
+                <p>No hay actividades programadas</p>
+                <small>Agrega actividades y organízalas por destino</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="documentos" class="tab-content">
+        <div class="section-header">
+            <h3>Documentos</h3>
+            <button class="btn btn-primary btn-small" onclick="openModal('documento-modal')">
+                <span class="material-icons">add</span>
+                Agregar
+            </button>
+        </div>
+        
+        <div class="documentos-list">
+            {% for documento in viaje.documentos %}
+            <div class="documento-item">
+                <div class="documento-info">
+                    <div class="documento-tipo">{{ documento.tipo.title() }}</div>
+                    <div class="documento-nombre">{{ documento.nombre }}</div>
+                    {% if documento.numero %}
+                    <div class="documento-numero">{{ documento.numero }}</div>
+                    {% endif %}
+                    {% if documento.fecha_vencimiento %}
+                    <div class="documento-vencimiento">
+                        Vence: {{ documento.fecha_vencimiento.strftime('%d/%m/%Y') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <span class="material-icons">description</span>
+                <p>No hay documentos guardados</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab Transportes -->
+    <div id="transportes" class="tab-content">
+        <div class="section-header">
+            <h3>Transporte</h3>
+            <button class="btn btn-primary btn-small" onclick="openModal('transporte-modal')">
+                <span class="material-icons">add</span>
+                Agregar Vuelo
+            </button>
+        </div>
+        
+        <div class="transportes-list">
+            {% for transporte in viaje.transportes %}
+            <div class="transporte-item">
+                <div class="transporte-header">
+                    <div class="ruta">
+                        <span class="origen">{{ transporte.origen }}</span>
+                        <span class="material-icons">flight_takeoff</span>
+                        <span class="destino">{{ transporte.destino }}</span>
+                    </div>
+                    <div class="tipo-badge">{{ transporte.tipo.title() }}</div>
+                </div>
+                
+                <div class="transporte-info">
+                    {% if transporte.codigo_reserva %}
+                    <div class="info-item">
+                        <span class="label">Reserva:</span>
+                        <span class="value">{{ transporte.codigo_reserva }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-item">
+                        <span class="label">Salida:</span>
+                        <span class="value">
+                            {{ transporte.fecha_salida.strftime('%d/%m/%Y') }}
+                            {% if transporte.hora_salida %}
+                                {{ transporte.hora_salida.strftime('%H:%M') }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="label">Llegada:</span>
+                        <span class="value">
+                            {{ transporte.fecha_llegada.strftime('%d/%m/%Y') }}
+                            {% if transporte.hora_llegada %}
+                                {{ transporte.hora_llegada.strftime('%H:%M') }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if transporte.aerolinea %}
+                    <div class="info-item">
+                        <span class="label">Aerolínea:</span>
+                        <span class="value">{{ transporte.aerolinea }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if transporte.numero_vuelo %}
+                    <div class="info-item">
+                        <span class="label">Vuelo:</span>
+                        <span class="value">{{ transporte.numero_vuelo }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if transporte.asiento %}
+                    <div class="info-item">
+                        <span class="label">Asiento:</span>
+                        <span class="value">{{ transporte.asiento }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if transporte.terminal %}
+                    <div class="info-item">
+                        <span class="label">Terminal:</span>
+                        <span class="value">{{ transporte.terminal }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if transporte.puerta %}
+                    <div class="info-item">
+                        <span class="label">Puerta:</span>
+                        <span class="value">{{ transporte.puerta }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if transporte.notas %}
+                    <div class="info-item full-width">
+                        <span class="label">Notas:</span>
+                        <span class="value">{{ transporte.notas }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <span class="material-icons">flight</span>
+                <p>No hay vuelos o transportes guardados</p>
+                <small>Agrega tus vuelos, trenes o cualquier medio de transporte</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab Alojamiento -->
+    <div id="alojamientos" class="tab-content">
+        <div class="section-header">
+            <h3>Alojamiento</h3>
+            <button class="btn btn-primary btn-small" onclick="openModal('alojamiento-modal')">
+                <span class="material-icons">add</span>
+                Agregar
+            </button>
+        </div>
+        
+        <div class="alojamientos-list">
+            {% for alojamiento in viaje.alojamientos %}
+            <div class="alojamiento-item">
+                <div class="alojamiento-header">
+                    <div class="alojamiento-nombre">{{ alojamiento.nombre }}</div>
+                    <div class="destino-badge">{{ alojamiento.destino.title() }}</div>
+                </div>
+                
+                <div class="alojamiento-info">
+                    <div class="info-item">
+                        <span class="material-icons">location_on</span>
+                        <span class="value">{{ alojamiento.direccion }}</span>
+                    </div>
+                    
+                    <div class="fechas-estancia">
+                        <div class="fecha-grupo">
+                            <div class="info-item">
+                                <span class="label">Check-in:</span>
+                                <span class="value">
+                                    {{ alojamiento.fecha_entrada.strftime('%d/%m/%Y') }}
+                                    {{ alojamiento.horario_checkin.strftime('%H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="fecha-grupo">
+                            <div class="info-item">
+                                <span class="label">Check-out:</span>
+                                <span class="value">
+                                    {{ alojamiento.fecha_salida.strftime('%d/%m/%Y') }}
+                                    {{ alojamiento.horario_checkout.strftime('%H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if alojamiento.incluye_desayuno %}
+                    <div class="desayuno-badge">
+                        <span class="material-icons">restaurant</span>
+                        Incluye desayuno
+                    </div>
+                    {% endif %}
+                    
+                    {% if alojamiento.numero_confirmacion or alojamiento.codigo_pin or alojamiento.numero_checkin %}
+                    <div class="codigos-reserva">
+                        {% if alojamiento.numero_confirmacion %}
+                        <div class="info-item">
+                            <span class="label">Confirmación:</span>
+                            <span class="value codigo">{{ alojamiento.numero_confirmacion }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if alojamiento.codigo_pin %}
+                        <div class="info-item">
+                            <span class="label">PIN:</span>
+                            <span class="value codigo">{{ alojamiento.codigo_pin }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if alojamiento.numero_checkin %}
+                        <div class="info-item">
+                            <span class="label">N° Check-in:</span>
+                            <span class="value codigo">{{ alojamiento.numero_checkin }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <span class="material-icons">hotel</span>
+                <p>No hay alojamientos registrados</p>
+                <small>Agrega los hoteles y alojamientos donde te hospedarás</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modales -->
+{% include 'modales.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const viajeId = parseInt('{{ viaje.id }}');
+
+// Funcionalidad de tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const tabName = this.dataset.tab;
+        
+        // Remover active de todos los tabs y contenidos
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Agregar active al tab y contenido seleccionado
+        this.classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+    });
+});
+
+// Event delegation para checkboxes de actividades
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('actividad-toggle')) {
+        const actividadId = e.target.dataset.actividadId;
+        toggleActividad(actividadId);
+    }
+});
+
+// Toggle actividad completada
+async function toggleActividad(actividadId) {
+    try {
+        const response = await fetch(`/actividad/${actividadId}/completar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            // Actualizar UI
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al actualizar actividad', 'error');
+    }
+}
+
+// Compartir viaje
+function shareViaje() {
+    const title = 'Mi Viaje - {{ viaje.destino|e }}';
+    const text = 'Mira mi viaje a {{ viaje.destino|e }}';
+    const url = window.location.href;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: text,
+            url: url
+        }).catch(err => console.log('Error al compartir:', err));
+    } else {
+        // Fallback: copiar URL
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('URL copiada al portapapeles', 'success');
+        }).catch(err => {
+            console.log('Error al copiar:', err);
+            showToast('No se pudo copiar la URL', 'error');
+        });
+    }
+}
+
+// Confirmar eliminación del viaje
+function confirmarEliminarViaje() {
+    const nombreViaje = '{{ viaje.nombre|e }}';
+    const totalParadas = {{ viaje.paradas|length }};
+    const totalGastos = {{ viaje.gastos|length }};
+    const totalActividades = {{ viaje.actividades|length }};
+    const totalDocumentos = {{ viaje.documentos|length }};
+    const totalTransportes = {{ viaje.transportes|length }};
+    const totalAlojamientos = {{ viaje.alojamientos|length }};
+    
+    const totalElementos = totalParadas + totalGastos + totalActividades + totalDocumentos + totalTransportes + totalAlojamientos;
+    
+    // Primera confirmación con información detallada
+    if (!confirm(`⚠️ ¿Estás seguro de que quieres eliminar el viaje "${nombreViaje}"?\n\nEsta acción eliminará PERMANENTEMENTE:\n• ${totalParadas} paradas del itinerario\n• ${totalGastos} gastos registrados\n• ${totalActividades} actividades programadas\n• ${totalDocumentos} documentos guardados\n• ${totalTransportes} transportes registrados\n• ${totalAlojamientos} alojamientos registrados\n\nTotal: ${totalElementos} elementos\n\n¡Esta acción NO se puede deshacer!`)) {
+        return;
+    }
+    
+    // Segunda confirmación más específica
+    const confirmText = `ELIMINAR ${nombreViaje.toUpperCase()}`;
+    const userInput = prompt(`Para confirmar la eliminación, escribe exactamente:\n"${confirmText}"`);
+    
+    if (userInput === confirmText) {
+        eliminarViaje();
+    } else if (userInput !== null) {
+        showToast('Cancelado: el texto no coincide exactamente', 'info');
+    }
+}
+
+// Eliminar viaje
+async function eliminarViaje() {
+    try {
+        // Mostrar indicador de carga
+        const loadingToast = showToast('Eliminando viaje...', 'info');
+        
+        const response = await fetch(`/viaje/${viajeId}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            // Redirigir a la página principal después de un breve delay
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al eliminar el viaje', 'error');
+    }
+}
+
+// Funciones para editar paradas
+function editarParada(paradaId, destino, fechaLlegada, fechaSalida, notas) {
+    // Llenar el formulario con los datos actuales
+    document.getElementById('editar-parada-id').value = paradaId;
+    document.getElementById('editar-parada-destino').value = destino;
+    document.getElementById('editar-parada-fecha-llegada').value = fechaLlegada;
+    document.getElementById('editar-parada-fecha-salida').value = fechaSalida;
+    document.getElementById('editar-parada-notas').value = notas || '';
+    
+    // Abrir el modal
+    openModal('editar-parada-modal');
+}
+
+// Función para eliminar parada
+async function eliminarParada(paradaId, destino) {
+    if (!confirm(`⚠️ ¿Estás seguro de que quieres eliminar la parada "${destino}"?\n\nEsta acción también afectará:\n• Las actividades asignadas a este destino\n• Los alojamientos en este destino\n• Los transportes relacionados\n\n¿Continuar?`)) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch(`/parada/${paradaId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            // Remover la parada visualmente con animación
+            const paradaElement = document.querySelector(`[data-parada-id="${paradaId}"]`);
+            if (paradaElement) {
+                paradaElement.style.transition = 'opacity 0.3s ease-out';
+                paradaElement.style.opacity = '0';
+                setTimeout(() => {
+                    location.reload();
+                }, 300);
+            } else {
+                location.reload();
+            }
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al eliminar la parada', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Eliminar viaje
+async function eliminarViaje() {
+    try {
+        // Mostrar indicador de carga
+        const loadingToast = showToast('Eliminando viaje...', 'info');
+        
+        const response = await fetch(`/viaje/${viajeId}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            // Redirigir a la página principal después de un breve delay
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al eliminar el viaje', 'error');
+    }
+}
+
+// Función para reordenar paradas automáticamente por fecha
+async function reordenarPorFecha() {
+    const viajeId = {{ viaje.id }};
+    
+    try {
+        showToast('Reordenando paradas por fecha...', 'info');
+        
+        const response = await fetch(`/viaje/${viajeId}/reordenar-por-fecha`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al reordenar');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('¡Paradas reordenadas por fecha exitosamente!', 'success');
+            // Recargar para mostrar el nuevo orden
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        } else {
+            showToast(`Error: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error al reordenar por fecha:', error);
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+// Inicializar mapa del viaje
+function inicializarMapa() {
+    const mapaContainer = document.getElementById('mapa-viaje');
+    if (!mapaContainer) return;
+    
+    // Datos de las paradas desde el backend
+    const paradas = [
+        {% for parada in viaje.paradas %}
+        {
+            destino: "{{ parada.destino|e }}",
+            orden: {{ parada.orden }},
+            fechaLlegada: "{{ parada.fecha_llegada.strftime('%d/%m/%Y') }}",
+            fechaSalida: "{{ parada.fecha_salida.strftime('%d/%m/%Y') }}",
+            notas: "{{ parada.notas|e if parada.notas else '' }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    if (paradas.length === 0) return;
+    
+    // Crear mapa centrado en la primera parada
+    const map = L.map('mapa-viaje').setView([0, 0], 2);
+    
+    // Agregar tiles de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+    }).addTo(map);
+    
+    // Array para almacenar las coordenadas de las paradas
+    const coordenadas = [];
+    let paradasGeocodificadas = 0;
+    
+    // Función para geocodificar una parada
+    async function geocodificarParada(parada, index) {
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(parada.destino)}&limit=1`);
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                coordenadas[index] = [lat, lon];
+                
+                // Crear marcador personalizado
+                const marker = L.marker([lat, lon]).addTo(map);
+                
+                // Contenido del popup
+                const popupContent = `
+                    <div class="popup-parada">
+                        <div class="parada-orden">${parada.orden}</div>
+                        <h4>${parada.destino}</h4>
+                        <p><strong>Llegada:</strong> ${parada.fechaLlegada}</p>
+                        <p><strong>Salida:</strong> ${parada.fechaSalida}</p>
+                        ${parada.notas ? `<p><strong>Notas:</strong> ${parada.notas}</p>` : ''}
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                
+                // Si es la primera parada, abrir el popup
+                if (index === 0) {
+                    marker.openPopup();
+                }
+            }
+            
+            paradasGeocodificadas++;
+            
+            // Cuando todas las paradas estén geocodificadas, ajustar la vista
+            if (paradasGeocodificadas === paradas.length) {
+                ajustarVistaMapa();
+            }
+            
+        } catch (error) {
+            console.error('Error geocodificando:', parada.destino, error);
+            paradasGeocodificadas++;
+            if (paradasGeocodificadas === paradas.length) {
+                ajustarVistaMapa();
+            }
+        }
+    }
+    
+    // Función para ajustar la vista del mapa
+    function ajustarVistaMapa() {
+        const coordenadasValidas = coordenadas.filter(coord => coord);
+        if (coordenadasValidas.length > 0) {
+            if (coordenadasValidas.length === 1) {
+                map.setView(coordenadasValidas[0], 10);
+            } else {
+                // Ajustar para mostrar todas las paradas
+                const bounds = L.latLngBounds(coordenadasValidas);
+                map.fitBounds(bounds, { padding: [20, 20] });
+                
+                // Dibujar línea conectando las paradas en orden
+                const polyline = L.polyline(coordenadasValidas, {
+                    color: '#2196F3',
+                    weight: 3,
+                    opacity: 0.8,
+                    dashArray: '10, 5'
+                }).addTo(map);
+            }
+        }
+    }
+    
+    // Geocodificar todas las paradas
+    paradas.forEach((parada, index) => {
+        // Añadir un pequeño delay para no sobrecargar el servicio de geocodificación
+        setTimeout(() => geocodificarParada(parada, index), index * 500);
+    });
+}
+
+// Ejecutar cuando la página carga
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, inicializando funcionalidades...');
+    
+    // Verificar que las funciones globales estén disponibles
+    if (typeof showToast === 'function') {
+        console.log('showToast disponible');
+    } else {
+        console.error('showToast no está disponible');
+    }
+    
+    // Inicializar mapa si existe
+    try {
+        inicializarMapa();
+        console.log('Mapa inicializado');
+    } catch (error) {
+        console.error('Error al inicializar mapa:', error);
+    }
+    
+    console.log('Funcionalidades inicializadas correctamente');
+});
+</script>
+{% endblock %}

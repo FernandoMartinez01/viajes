@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Viajes{% endblock %}
+{% block header_title %}Mis Viajes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Botón de nuevo viaje prominente -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h2>¡Planifica tu próxima aventura!</h2>
+            <p>Organiza todos los detalles de tus viajes en un solo lugar</p>
+            <a href="{{ url_for('nuevo_viaje') }}" class="btn btn-primary btn-large">
+                <span class="material-icons">add</span>
+                Crear Nuevo Viaje
+            </a>
+        </div>
+    </div>
+
+    <!-- Lista de viajes -->
+    <section class="viajes-section">
+        {% if viajes %}
+            <h3 class="section-title">Tus Viajes</h3>
+            <div class="viajes-grid">
+                {% for viaje in viajes %}
+                <div class="viaje-card" onclick="window.location.href='{{ url_for('ver_viaje', viaje_id=viaje.id) }}'">
+                    <div class="viaje-header">
+                        <h4 class="viaje-destino">{{ viaje.nombre }}</h4>
+                        <div class="viaje-estado">
+                            {% if viaje.fecha_inicio > hoy %}
+                                <span class="estado-badge futuro">Próximo</span>
+                            {% elif viaje.fecha_fin >= hoy %}
+                                <span class="estado-badge activo">En curso</span>
+                            {% else %}
+                                <span class="estado-badge pasado">Completado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Mostrar paradas si existen -->
+                    {% if viaje.paradas %}
+                    <div class="viaje-paradas">
+                        <div class="paradas-preview">
+                            {% for parada in viaje.paradas[:3] %}
+                            <span class="parada-tag">{{ parada.destino }}</span>
+                            {% endfor %}
+                            {% if viaje.paradas|length > 3 %}
+                            <span class="paradas-mas">+{{ viaje.paradas|length - 3 }} más</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="viaje-fechas">
+                        <span class="material-icons">date_range</span>
+                        {{ viaje.fecha_inicio.strftime('%d/%m/%Y') }} - {{ viaje.fecha_fin.strftime('%d/%m/%Y') }}
+                    </div>
+                    
+                    {% if viaje.gastos %}
+                    <div class="viaje-gastos-counter">
+                        <div class="gastos-info">
+                            <span class="total-gastado">${{ "%.2f"|format(viaje.presupuesto_gastado) }}</span>
+                            <span class="gastos-label">total gastado</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="viaje-stats">
+                        <div class="stat">
+                            <span class="material-icons">receipt</span>
+                            <span>{{ viaje.gastos|length }} gastos</span>
+                        </div>
+                        <div class="stat">
+                            <span class="material-icons">event</span>
+                            <span>{{ viaje.actividades|length }} actividades</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <span class="material-icons">flight_takeoff</span>
+                </div>
+                <h3>¡Comienza tu primera aventura!</h3>
+                <p>No tienes viajes planificados aún. Crea tu primer viaje para comenzar a organizar tu experiencia.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Funcionalidad específica de la página de inicio
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación de entrada para las tarjetas
+    const viajeCards = document.querySelectorAll('.viaje-card');
+    viajeCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in');
+    });
+});
+</script>
+{% endblock %}

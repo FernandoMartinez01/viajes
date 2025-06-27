@@ -1,0 +1,12 @@
+{
+  "build": {
+    "commands": [
+      "pip install -r requirements.txt"
+    ]
+  },
+  "deploy": {
+    "startCommand": "python init_db.py && gunicorn app:app --bind 0.0.0.0:$PORT",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300
+  }
+}
