@@ -4,37 +4,34 @@ Blueprint para rutas de transportes.
 """
 
 from flask import Blueprint, request, jsonify
-from datetime import datetime
 
 # Crear el blueprint
 transportes_bp = Blueprint('transportes', __name__)
 
-# Variables globales para modelos y funciones (se inicializarán después)
-Transporte = None
-db = None
+# Variables globales para servicios (se inicializarán después)
+transporte_service = None
 
-def init_transportes_routes(models_dict, database_instance):
-    """Inicializa las rutas de transportes con los modelos y base de datos necesarios."""
-    global Transporte, db
+def init_transportes_routes(models_dict, database_instance, services_dict):
+    """Inicializa las rutas de transportes con los servicios necesarios."""
+    global transporte_service
     
-    Transporte = models_dict['Transporte']
-    db = database_instance
+    transporte_service = services_dict['transporte_service']
 
 @transportes_bp.route('/viaje/<int:viaje_id>/transporte', methods=['POST'])
 def agregar_transporte(viaje_id):
     """Agregar un nuevo transporte a un viaje."""
     data = request.get_json()
     
-    transporte = Transporte(
+    resultado = transporte_service.crear_transporte(
         viaje_id=viaje_id,
         tipo=data.get('tipo', 'vuelo'),
         origen=data['origen'],
         destino=data['destino'],
+        fecha_salida=data['fecha_salida'],
+        fecha_llegada=data['fecha_llegada'],
+        hora_salida=data.get('hora_salida'),
+        hora_llegada=data.get('hora_llegada'),
         codigo_reserva=data.get('codigo_reserva', ''),
-        fecha_salida=datetime.strptime(data['fecha_salida'], '%Y-%m-%d').date(),
-        hora_salida=datetime.strptime(data['hora_salida'], '%H:%M').time() if data.get('hora_salida') else None,
-        fecha_llegada=datetime.strptime(data['fecha_llegada'], '%Y-%m-%d').date(),
-        hora_llegada=datetime.strptime(data['hora_llegada'], '%H:%M').time() if data.get('hora_llegada') else None,
         aerolinea=data.get('aerolinea', ''),
         numero_vuelo=data.get('numero_vuelo', ''),
         terminal=data.get('terminal', ''),
@@ -43,7 +40,4 @@ def agregar_transporte(viaje_id):
         notas=data.get('notas', '')
     )
     
-    db.session.add(transporte)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'transporte_id': transporte.id})
+    return jsonify(resultado)
