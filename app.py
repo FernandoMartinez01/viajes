@@ -24,35 +24,49 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# Variable global para controlar la inicialización
+_db_initialized = False
+
 # Inicializar base de datos automáticamente
 def init_db_auto():
-    """Función para inicializar DB que se ejecuta siempre"""
+    """Función para inicializar DB que se ejecuta solo cuando es necesario"""
+    global _db_initialized
+    
+    if _db_initialized:
+        return True
+        
     try:
-        with app.app_context():
-            # Crear el directorio si no existe (solo para SQLite local)
-            db_uri = app.config['SQLALCHEMY_DATABASE_URI']
-            if db_uri.startswith('sqlite:///'):
-                db_path = db_uri.replace('sqlite:///', '')
-                db_dir = os.path.dirname(db_path)
-                if db_dir and not os.path.exists(db_dir):
-                    os.makedirs(db_dir, exist_ok=True)
-                    print(f"📁 Directorio de DB creado: {db_dir}")
-            
-            db.create_all()
-            print("✅ Tablas de base de datos verificadas/creadas correctamente")
-            
-            # Verificar que la conexión funciona
-            viajes_count = Viaje.query.count()
-            print(f"📊 Base de datos conectada correctamente. Viajes existentes: {viajes_count}")
-            return True
+        print("🔄 Inicializando base de datos...")
+        
+        # Crear el directorio si no existe (solo para SQLite local)
+        db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+        if db_uri.startswith('sqlite:///'):
+            db_path = db_uri.replace('sqlite:///', '')
+            db_dir = os.path.dirname(db_path)
+            if db_dir and not os.path.exists(db_dir):
+                os.makedirs(db_dir, exist_ok=True)
+                print(f"📁 Directorio de DB creado: {db_dir}")
+        
+        db.create_all()
+        print("✅ Tablas de base de datos verificadas/creadas correctamente")
+        
+        # Verificar que la conexión funciona
+        viajes_count = Viaje.query.count()
+        print(f"📊 Base de datos conectada correctamente. Viajes existentes: {viajes_count}")
+        
+        _db_initialized = True
+        return True
+        
     except Exception as e:
         print(f"❌ Error al crear tablas: {e}")
         import traceback
         traceback.print_exc()
         return False
 
-# Ejecutar inicialización automática
-init_db_auto()
+def ensure_db_initialized():
+    """Garantiza que la DB esté inicializada antes de cualquier operación"""
+    if not _db_initialized:
+        init_db_auto()
 
 # Headers de respuesta para desarrollo
 @app.after_request
@@ -161,12 +175,15 @@ class Alojamiento(db.Model):
 # Rutas principales
 @app.route('/')
 def index():
+    # Asegurar que la DB esté inicializada
+    ensure_db_initialized()
+    
     # Asegurar que la DB esté inicializada (failsafe)
     try:
         viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
     except Exception as e:
         print(f"Error de BD, intentando inicializar: {e}")
-        init_db()
+        init_db_auto()
         viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
     
     return render_template('index.html', viajes=viajes, hoy=date.today())
@@ -681,71 +698,60 @@ def porcentaje_presupuesto(gastado, total):
         return 0
     return min(100, (gastado / total) * 100)
 
-# Crear tablas automáticamente en el primer acceso
+# Crear tablas automáticamente en el primer acceso (función legacy)
 def init_db():
-    try:
-        with app.app_context():
-            # Crear el directorio si no existe (solo para SQLite local)
-            db_uri = app.config['SQLALCHEMY_DATABASE_URI']
-            if db_uri.startswith('sqlite:///'):
-                db_path = db_uri.replace('sqlite:///', '')
-                db_dir = os.path.dirname(db_path)
-                if db_dir and not os.path.exists(db_dir):
-                    os.makedirs(db_dir, exist_ok=True)
-                    print(f"📁 Directorio de DB creado: {db_dir}")
-            
-            db.create_all()
-            print("✅ Tablas de base de datos verificadas/creadas correctamente")
-            
-            # Verificar que la conexión funciona
-            viajes_count = Viaje.query.count()
-            print(f"📊 Base de datos conectada correctamente. Viajes existentes: {viajes_count}")
-            return True
-    except Exception as e:
-        print(f"❌ Error al crear tablas: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+    return init_db_auto()
 
 # Ruta de health check para Railway
 @app.route('/health')
 def health_check():
     try:
+        # Asegurar que la DB esté inicializada
+        ensure_db_initialized()
+        
         # Verificar que la app y la DB están funcionando
         viajes_count = Viaje.query.count()
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
-            'viajes': viajes_count
+            'viajes': viajes_count,
+            'timestamp': datetime.utcnow().isoformat()
         }), 200
     except Exception as e:
-        print(f"Health check failed: {e}")
+        print(f"❌ Health check falló: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({
             'status': 'unhealthy',
-            'error': str(e)
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
         }), 500
 
 # Endpoint temporal para inicializar DB manualmente
 @app.route('/init-db')
 def force_init_db():
     try:
-        success = init_db()
+        global _db_initialized
+        _db_initialized = False  # Forzar re-inicialización
+        
+        success = init_db_auto()
         if success:
             return jsonify({
                 'status': 'success',
-                'message': 'Base de datos inicializada correctamente'
+                'message': 'Base de datos inicializada correctamente',
+                'timestamp': datetime.utcnow().isoformat()
             }), 200
         else:
             return jsonify({
                 'status': 'error',
-                'message': 'Error al inicializar base de datos'
+                'message': 'Error al inicializar base de datos',
+                'timestamp': datetime.utcnow().isoformat()
             }), 500
     except Exception as e:
         return jsonify({
             'status': 'error',
-            'message': f'Error: {str(e)}'
+            'message': f'Error: {str(e)}',
+            'timestamp': datetime.utcnow().isoformat()
         }), 500
 
 # Manejo global de errores
