@@ -380,6 +380,13 @@ function debounce(func, wait) {
 document.addEventListener('DOMContentLoaded', function() {
     new ViajeApp();
     
+    // Inicializar sistema de tabs si estamos en la página de viaje
+    if (document.querySelector('.tabs')) {
+        setTimeout(() => {
+            initializeTabs();
+        }, 100);
+    }
+    
     // Configurar fecha de hoy para inputs de fecha
     const today = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(input => {
@@ -400,6 +407,53 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
-    console.log('App de Viajes inicializada correctamente');
 });
+
+// Funciones para persistencia de tabs
+function saveActiveTab(tabId) {
+    localStorage.setItem('activeTab', tabId);
+}
+
+function getActiveTab() {
+    return localStorage.getItem('activeTab') || 'gastos';
+}
+
+function reloadWithActiveTab() {
+    window.location.reload();
+}
+
+// Funciones para manejo de tabs
+function switchToTab(tabName) {
+    // Remover active de todos los tabs y contenidos
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    // Agregar active al tab y contenido seleccionado
+    const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+    const tabContent = document.getElementById(tabName);
+    
+    if (tabButton && tabContent) {
+        tabButton.classList.add('active');
+        tabContent.classList.add('active');
+        saveActiveTab(tabName);
+    }
+}
+
+function initializeTabs() {
+    // Configurar event listeners para tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            switchToTab(tabName);
+        });
+    });
+
+    // Restaurar tab activo al cargar la página
+    const activeTab = getActiveTab();
+    
+    if (activeTab && document.getElementById(activeTab)) {
+        switchToTab(activeTab);
+    } else {
+        switchToTab('gastos');
+    }
+}

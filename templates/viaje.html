@@ -472,22 +472,8 @@
 
 {% block scripts %}
 <script>
+// Variable global del viaje
 const viajeId = parseInt('{{ viaje.id }}');
-
-// Funcionalidad de tabs
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const tabName = this.dataset.tab;
-        
-        // Remover active de todos los tabs y contenidos
-        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        // Agregar active al tab y contenido seleccionado
-        this.classList.add('active');
-        document.getElementById(tabName).classList.add('active');
-    });
-});
 
 // Event delegation para checkboxes de actividades
 document.addEventListener('change', function(e) {
@@ -509,8 +495,19 @@ async function toggleActividad(actividadId) {
         
         const result = await response.json();
         if (result.success) {
-            // Actualizar UI
-            location.reload();
+            // Actualizar UI dinámicamente sin recargar
+            const checkbox = document.querySelector(`[data-actividad-id="${actividadId}"]`);
+            const actividadCard = checkbox.closest('.actividad-item');
+            
+            if (result.completada) {
+                actividadCard.classList.add('completada');
+                checkbox.checked = true;
+            } else {
+                actividadCard.classList.remove('completada');
+                checkbox.checked = false;
+            }
+            
+            showToast('Actividad actualizada', 'success');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -638,10 +635,10 @@ async function eliminarParada(paradaId, destino) {
                 paradaElement.style.transition = 'opacity 0.3s ease-out';
                 paradaElement.style.opacity = '0';
                 setTimeout(() => {
-                    location.reload();
+                    reloadWithActiveTab();
                 }, 300);
             } else {
-                location.reload();
+                reloadWithActiveTab();
             }
         } else {
             showToast(result.message, 'error');
@@ -710,7 +707,7 @@ async function reordenarPorFecha() {
             showToast('¡Paradas reordenadas por fecha exitosamente!', 'success');
             // Recargar para mostrar el nuevo orden
             setTimeout(() => {
-                location.reload();
+                reloadWithActiveTab();
             }, 800);
         } else {
             showToast(`Error: ${result.error}`, 'error');
@@ -834,24 +831,12 @@ function inicializarMapa() {
 
 // Ejecutar cuando la página carga
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, inicializando funcionalidades...');
-    
-    // Verificar que las funciones globales estén disponibles
-    if (typeof showToast === 'function') {
-        console.log('showToast disponible');
-    } else {
-        console.error('showToast no está disponible');
-    }
-    
     // Inicializar mapa si existe
     try {
         inicializarMapa();
-        console.log('Mapa inicializado');
     } catch (error) {
         console.error('Error al inicializar mapa:', error);
     }
-    
-    console.log('Funcionalidades inicializadas correctamente');
 });
 </script>
 {% endblock %}

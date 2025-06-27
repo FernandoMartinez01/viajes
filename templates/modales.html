@@ -530,7 +530,7 @@ document.getElementById('gasto-form').addEventListener('submit', async function(
         if (result.success) {
             showToast('Gasto agregado exitosamente', 'success');
             closeModal('gasto-modal');
-            location.reload();
+            reloadWithActiveTab();
         } else {
             showToast('Error al agregar gasto', 'error');
         }
@@ -561,7 +561,7 @@ document.getElementById('actividad-form').addEventListener('submit', async funct
         if (result.success) {
             showToast('Actividad agregada exitosamente', 'success');
             closeModal('actividad-modal');
-            location.reload();
+            reloadWithActiveTab();
         } else {
             showToast('Error al agregar actividad', 'error');
         }
@@ -592,7 +592,7 @@ document.getElementById('documento-form').addEventListener('submit', async funct
         if (result.success) {
             showToast('Documento agregado exitosamente', 'success');
             closeModal('documento-modal');
-            location.reload();
+            reloadWithActiveTab();
         } else {
             showToast('Error al agregar documento', 'error');
         }
@@ -626,7 +626,7 @@ document.getElementById('transporte-form').addEventListener('submit', async func
             showToast('¡Transporte agregado exitosamente!', 'success');
             closeModal('transporte-modal');
             this.reset();
-            location.reload();
+            reloadWithActiveTab();
         } else {
             showToast('Error al agregar transporte', 'error');
         }
@@ -665,7 +665,7 @@ document.getElementById('alojamiento-form').addEventListener('submit', async fun
             showToast('¡Alojamiento agregado exitosamente!', 'success');
             closeModal('alojamiento-modal');
             this.reset();
-            location.reload();
+            reloadWithActiveTab();
         } else {
             showToast('Error al agregar alojamiento', 'error');
         }
@@ -701,7 +701,7 @@ document.getElementById('parada-form').addEventListener('submit', async function
             showToast('¡Parada agregada exitosamente!', 'success');
             closeModal('parada-modal');
             this.reset();
-            location.reload();
+            reloadWithActiveTab();
         } else {
             showToast('Error al agregar parada', 'error');
         }
@@ -737,7 +737,7 @@ document.getElementById('editar-parada-form').addEventListener('submit', async f
         if (result.success) {
             showToast('¡Parada actualizada exitosamente!', 'success');
             closeModal('editar-parada-modal');
-            location.reload();
+            reloadWithActiveTab();
         } else {
             showToast('Error al actualizar parada', 'error');
         }

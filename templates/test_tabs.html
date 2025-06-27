@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Funciones de Tab</title>
+</head>
+<body>
+    <h1>Test de Funciones de Tab</h1>
+    
+    <div>
+        <button onclick="testSaveActiveTab()">Test Save Active Tab</button>
+        <button onclick="testGetActiveTab()">Test Get Active Tab</button>
+        <button onclick="testReloadWithActiveTab()">Test Reload With Active Tab</button>
+        <button onclick="clearStorage()">Clear Storage</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script src="/static/js/app.js"></script>
+    <script>
+        function testSaveActiveTab() {
+            console.log('Testing saveActiveTab...');
+            if (typeof saveActiveTab === 'function') {
+                saveActiveTab('actividades');
+                log('✅ saveActiveTab function is available and executed');
+            } else {
+                log('❌ saveActiveTab function is NOT available');
+            }
+        }
+        
+        function testGetActiveTab() {
+            console.log('Testing getActiveTab...');
+            if (typeof getActiveTab === 'function') {
+                const activeTab = getActiveTab();
+                log(`✅ getActiveTab function is available. Current tab: ${activeTab}`);
+            } else {
+                log('❌ getActiveTab function is NOT available');
+            }
+        }
+        
+        function testReloadWithActiveTab() {
+            console.log('Testing reloadWithActiveTab...');
+            if (typeof reloadWithActiveTab === 'function') {
+                log('✅ reloadWithActiveTab function is available');
+                // No ejecutamos para evitar reload real
+            } else {
+                log('❌ reloadWithActiveTab function is NOT available');
+            }
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('activeTab');
+            log('🗑️ Storage cleared');
+        }
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += `<p>${message}</p>`;
+            console.log(message);
+        }
+        
+        // Test initial state
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                log('🚀 Starting function availability tests...');
+                testSaveActiveTab();
+                testGetActiveTab();
+                testReloadWithActiveTab();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
