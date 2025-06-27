@@ -16,9 +16,16 @@ if database_url:
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
-    # Desarrollo (SQLite) - Usar instancia local
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/viaje.db'
-    print("🗄️  Usando SQLite en desarrollo")
+    # Desarrollo (SQLite) - Usar ruta local fuera de OneDrive
+    # Opción 1: Directorio local en Documents (recomendado)
+    local_db_path = os.path.join(os.path.expanduser('~'), 'Documents', 'viaje_local', 'viaje.db')
+    
+    # Opción 2: Si quieres usar el directorio actual del proyecto
+    # current_dir = os.path.dirname(os.path.abspath(__file__))
+    # local_db_path = os.path.join(current_dir, 'viaje.db')
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{local_db_path}'
+    print(f"🗄️  Usando SQLite en desarrollo: {local_db_path}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
