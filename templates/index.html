@@ -23,7 +23,7 @@
             <h3 class="section-title">Tus Viajes</h3>
             <div class="viajes-grid">
                 {% for viaje in viajes %}
-                <div class="viaje-card" onclick="window.location.href='{{ url_for('viajes.ver_viaje', viaje_id=viaje.id) }}'">
+                <div class="viaje-card" data-viaje-url="{{ url_for('viajes.ver_viaje', viaje_id=viaje.id) }}">>
                     <div class="viaje-header">
                         <h4 class="viaje-destino">{{ viaje.nombre }}</h4>
                         <div class="viaje-estado">
@@ -100,6 +100,17 @@ document.addEventListener('DOMContentLoaded', function() {
     viajeCards.forEach((card, index) => {
         card.style.animationDelay = `${index * 0.1}s`;
         card.classList.add('fade-in');
+        
+        // Agregar funcionalidad de clic para navegar al viaje
+        card.addEventListener('click', function() {
+            const viajeUrl = this.getAttribute('data-viaje-url');
+            if (viajeUrl) {
+                window.location.href = viajeUrl;
+            }
+        });
+        
+        // Agregar clase para indicar que es clickeable
+        card.style.cursor = 'pointer';
     });
 });
 </script>
