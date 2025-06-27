@@ -2,32 +2,14 @@ import os
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date
+from config.settings import Config
 
 app = Flask(__name__)
 
-# Configuración dinámica para desarrollo y producción
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'tu-clave-secreta-aqui')
-
-# Base de datos: PostgreSQL en producción, SQLite en desarrollo
-database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    # Producción (PostgreSQL) - Corregir URL si es necesario
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-else:
-    # Desarrollo (SQLite) - Usar ruta local fuera de OneDrive
-    # Opción 1: Directorio local en Documents (recomendado)
-    local_db_path = os.path.join(os.path.expanduser('~'), 'Documents', 'viaje_local', 'viaje.db')
-    
-    # Opción 2: Si quieres usar el directorio actual del proyecto
-    # current_dir = os.path.dirname(os.path.abspath(__file__))
-    # local_db_path = os.path.join(current_dir, 'viaje.db')
-    
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{local_db_path}'
-    print(f"🗄️  Usando SQLite en desarrollo: {local_db_path}")
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Configuración usando el módulo separado
+app.config['SECRET_KEY'] = Config.get_secret_key()
+app.config['SQLALCHEMY_DATABASE_URI'] = Config.get_database_uri()
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = Config.get_sqlalchemy_track_modifications()
 
 db = SQLAlchemy(app)
 
