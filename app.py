@@ -130,10 +130,23 @@ class Alojamiento(db.Model):
     codigo_pin = db.Column(db.String(20))  # Opcional
     numero_checkin = db.Column(db.String(50))  # Opcional
 
+# Inicializar base de datos automáticamente al arrancar
+@app.before_first_request
+def init_database():
+    """Inicializar la base de datos en la primera petición"""
+    init_db()
+
 # Rutas principales
 @app.route('/')
 def index():
-    viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
+    # Asegurar que la DB esté inicializada (failsafe)
+    try:
+        viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
+    except Exception as e:
+        print(f"Error de BD, intentando inicializar: {e}")
+        init_db()
+        viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
+    
     return render_template('index.html', viajes=viajes, hoy=date.today())
 
 @app.route('/viaje/<int:viaje_id>')
@@ -690,6 +703,27 @@ def health_check():
         return jsonify({
             'status': 'unhealthy',
             'error': str(e)
+        }), 500
+
+# Endpoint temporal para inicializar DB manualmente
+@app.route('/init-db')
+def force_init_db():
+    try:
+        success = init_db()
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Base de datos inicializada correctamente'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Error al inicializar base de datos'
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error: {str(e)}'
         }), 500
 
 # Manejo global de errores
