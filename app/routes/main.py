@@ -40,7 +40,38 @@ def index():
         init_db_auto()
         viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
     
-    return render_template('index.html', viajes=viajes, hoy=date.today())
+    # Calcular el estado de cada viaje en el backend para evitar problemas en Jinja2
+    hoy = date.today()
+    viajes_con_estado = []
+    
+    for viaje in viajes:
+        estado = 'pasado'  # default
+        
+        if viaje.fecha_inicio and viaje.fecha_fin:
+            if viaje.fecha_inicio > hoy:
+                estado = 'futuro'
+            elif viaje.fecha_fin >= hoy:
+                estado = 'activo'
+            else:
+                estado = 'pasado'
+        
+        # Calcular información de paradas para evitar comparaciones en template
+        paradas_info = {
+            'total': len(viaje.paradas) if viaje.paradas else 0,
+            'primeras_tres': viaje.paradas[:3] if viaje.paradas else [],
+            'tiene_mas': len(viaje.paradas) > 3 if viaje.paradas else False,
+            'extras': len(viaje.paradas) - 3 if viaje.paradas and len(viaje.paradas) > 3 else 0
+        }
+        
+        # Crear un objeto con el viaje y su estado calculado
+        viaje_info = {
+            'viaje': viaje,
+            'estado': estado,
+            'paradas_info': paradas_info
+        }
+        viajes_con_estado.append(viaje_info)
+    
+    return render_template('index.html', viajes_con_estado=viajes_con_estado, hoy=hoy)
 
 @main_bp.route('/health')
 def health_check():
@@ -92,6 +123,22 @@ def force_init_db():
             'message': f'Error: {str(e)}',
             'timestamp': datetime.utcnow().isoformat()
         }), 500
+
+@main_bp.route('/debug')
+def debug_index():
+    """Página de debug para diagnosticar problemas en templates."""
+    # Asegurar que la DB esté inicializada
+    ensure_db_initialized()
+    
+    # Obtener viajes para debug
+    try:
+        viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
+    except Exception as e:
+        print(f"Error de BD, intentando inicializar: {e}")
+        init_db_auto()
+        viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
+    
+    return render_template('index_debug.html', viajes=viajes, hoy=date.today())
 
 # Manejadores de errores
 @main_bp.errorhandler(500)

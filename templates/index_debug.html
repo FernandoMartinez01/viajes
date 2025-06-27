@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Viajes - DEBUG{% endblock %}
+{% block header_title %}Mis Viajes - DEBUG{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>DEBUG - Template de Viajes</h2>
+    
+    <!-- Test simple sin loops -->
+    <div class="test-card">
+        <h3>Test Card (Sin Datos)</h3>
+        <p>Esta es una tarjeta de test simple</p>
+    </div>
+    
+    <hr>
+    
+    <!-- Información de debug -->
+    <div class="debug-info">
+        <h3>Información de Debug:</h3>
+        <p>Número de viajes: {{ viajes|length }}</p>
+        <p>Fecha de hoy: {{ hoy }}</p>
+    </div>
+    
+    <hr>
+    
+    <!-- Lista de viajes con debug -->
+    {% if viajes %}
+        <h3>Viajes (con debug):</h3>
+        {% for viaje in viajes %}
+        <div class="debug-viaje-item" style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+            <p><strong>Viaje ID:</strong> {{ viaje.id }}</p>
+            <p><strong>Nombre Raw:</strong> {{ viaje.nombre }}</p>
+            <p><strong>Nombre Escaped:</strong> {{ viaje.nombre|e }}</p>
+            <p><strong>Fecha inicio:</strong> {{ viaje.fecha_inicio }}</p>
+            <p><strong>Fecha fin:</strong> {{ viaje.fecha_fin }}</p>
+            
+            <hr>
+            
+            <!-- Test de la tarjeta original -->
+            <div class="viaje-card-test" style="border: 2px solid red;">
+                <div class="viaje-header">
+                    <h4 class="viaje-destino">NOMBRE: {{ viaje.nombre }}</h4>
+                    <div class="viaje-estado">
+                        {% if viaje.fecha_inicio > hoy %}
+                            <span class="estado-badge futuro">Próximo</span>
+                        {% elif viaje.fecha_fin >= hoy %}
+                            <span class="estado-badge activo">En curso</span>
+                        {% else %}
+                            <span class="estado-badge pasado">Completado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No hay viajes disponibles</p>
+    {% endif %}
+</div>
+{% endblock %}

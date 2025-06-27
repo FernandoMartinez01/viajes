@@ -28,8 +28,11 @@ Transporte = models['Transporte']
 Alojamiento = models['Alojamiento']
 
 # Inicializar servicio de base de datos
-from app.services import database_service
+from app.services import database_service, viaje_service, gasto_service
 database_service.init_service(app, db, models)
+viaje_service.init_service(models, db)
+gasto_service.init_models(models, db)
+print("🧳 GastoService inicializado")
 
 # Función para inicializar blueprints con dependencias
 def init_blueprints_dependencies():
@@ -52,7 +55,7 @@ def init_blueprints_dependencies():
     
     # Inicializar rutas de gastos
     from app.routes.gastos import init_gastos_routes
-    init_gastos_routes(models, db)
+    init_gastos_routes(gasto_service)
     
     # Inicializar rutas de actividades
     from app.routes.actividades import init_actividades_routes

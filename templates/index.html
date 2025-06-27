@@ -19,17 +19,19 @@
 
     <!-- Lista de viajes -->
     <section class="viajes-section">
-        {% if viajes %}
+        {% if viajes_con_estado %}
             <h3 class="section-title">Tus Viajes</h3>
             <div class="viajes-grid">
-                {% for viaje in viajes %}
-                <div class="viaje-card" data-viaje-url="{{ url_for('viajes.ver_viaje', viaje_id=viaje.id) }}">>
+                {% for viaje_info in viajes_con_estado %}
+                {% set viaje = viaje_info.viaje %}
+                {% set estado = viaje_info.estado %}
+                <div class="viaje-card" data-viaje-url="{{ url_for('viajes.ver_viaje', viaje_id=viaje.id) }}">
                     <div class="viaje-header">
                         <h4 class="viaje-destino">{{ viaje.nombre }}</h4>
                         <div class="viaje-estado">
-                            {% if viaje.fecha_inicio > hoy %}
+                            {% if estado == 'futuro' %}
                                 <span class="estado-badge futuro">Próximo</span>
-                            {% elif viaje.fecha_fin >= hoy %}
+                            {% elif estado == 'activo' %}
                                 <span class="estado-badge activo">En curso</span>
                             {% else %}
                                 <span class="estado-badge pasado">Completado</span>
@@ -38,14 +40,14 @@
                     </div>
                     
                     <!-- Mostrar paradas si existen -->
-                    {% if viaje.paradas %}
+                    {% if viaje_info.paradas_info.total %}
                     <div class="viaje-paradas">
                         <div class="paradas-preview">
-                            {% for parada in viaje.paradas[:3] %}
+                            {% for parada in viaje_info.paradas_info.primeras_tres %}
                             <span class="parada-tag">{{ parada.destino }}</span>
                             {% endfor %}
-                            {% if viaje.paradas|length > 3 %}
-                            <span class="paradas-mas">+{{ viaje.paradas|length - 3 }} más</span>
+                            {% if viaje_info.paradas_info.tiene_mas %}
+                            <span class="paradas-mas">+{{ viaje_info.paradas_info.extras }} más</span>
                             {% endif %}
                         </div>
                     </div>
@@ -95,6 +97,20 @@
 <script>
 // Funcionalidad específica de la página de inicio
 document.addEventListener('DOMContentLoaded', function() {
+    // Limpiar cualquier ">" suelto en las tarjetas de viaje
+    document.querySelectorAll(".viaje-card").forEach(card => {
+        // Eliminar nodos de texto que contengan solo ">"
+        for (let i = card.childNodes.length - 1; i >= 0; i--) {
+            const node = card.childNodes[i];
+            if (node.nodeType === Node.TEXT_NODE) {
+                const content = node.textContent.trim();
+                if (content === ">" || content === "") {
+                    card.removeChild(node);
+                }
+            }
+        }
+    });
+    
     // Animación de entrada para las tarjetas
     const viajeCards = document.querySelectorAll('.viaje-card');
     viajeCards.forEach((card, index) => {
