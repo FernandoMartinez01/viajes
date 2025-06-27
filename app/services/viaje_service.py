@@ -22,6 +22,7 @@ class ViajeService:
     
     def agrupar_actividades_por_destino(self, viaje):
         """
+        DEPRECATED: Esta función se ha movido a ActividadService.
         Agrupa y ordena las actividades de un viaje por destino y fecha/hora.
         
         Args:
@@ -30,35 +31,9 @@ class ViajeService:
         Returns:
             OrderedDict: Actividades agrupadas por destino y ordenadas
         """
-        actividades_agrupadas = {}
-        
-        # Agrupar actividades por destino
-        for actividad in viaje.actividades:
-            destino = actividad.destino or 'general'
-            if destino not in actividades_agrupadas:
-                actividades_agrupadas[destino] = []
-            actividades_agrupadas[destino].append(actividad)
-        
-        # Ordenar actividades dentro de cada destino por fecha y hora
-        for destino in actividades_agrupadas:
-            actividades_agrupadas[destino].sort(key=lambda a: (
-                a.fecha,
-                a.hora if a.hora else datetime.min.time()
-            ))
-        
-        # Crear diccionario ordenado: 'general' primero, luego resto alfabéticamente
-        actividades_ordenadas = OrderedDict()
-        
-        # Primero 'general' si existe
-        if 'general' in actividades_agrupadas:
-            actividades_ordenadas['general'] = actividades_agrupadas['general']
-        
-        # Luego el resto ordenado alfabéticamente
-        for destino in sorted(actividades_agrupadas.keys()):
-            if destino != 'general':
-                actividades_ordenadas[destino] = actividades_agrupadas[destino]
-        
-        return actividades_ordenadas
+        # Importar el servicio de actividades para delegar
+        from app.services import actividad_service
+        return actividad_service.agrupar_actividades_por_destino(viaje.id)
     
     def eliminar_viaje_completo(self, viaje_id):
         """
