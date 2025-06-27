@@ -58,6 +58,26 @@ def init_blueprints_dependencies():
     # Inicializar rutas de viajes
     from app.routes.viajes import init_viajes_routes
     init_viajes_routes(models, db)
+    
+    # Inicializar rutas de gastos
+    from app.routes.gastos import init_gastos_routes
+    init_gastos_routes(models, db)
+    
+    # Inicializar rutas de actividades
+    from app.routes.actividades import init_actividades_routes
+    init_actividades_routes(models, db)
+    
+    # Inicializar rutas de documentos
+    from app.routes.documentos import init_documentos_routes
+    init_documentos_routes(models, db)
+    
+    # Inicializar rutas de transportes
+    from app.routes.transportes import init_transportes_routes
+    init_transportes_routes(models, db)
+    
+    # Inicializar rutas de alojamientos
+    from app.routes.alojamientos import init_alojamientos_routes
+    init_alojamientos_routes(models, db)
 
 # Variable global para controlar la inicialización
 _db_initialized = False
@@ -125,7 +145,7 @@ init_blueprints_dependencies()
 
 # Rutas de eliminación de viajes movidas a app/routes/viajes.py
 
-@app.route('/nuevo-viaje', methods=['GET', 'POST'])
+# Ruta de nuevo viaje movida a app/routes/viajes.py
 def nuevo_viaje():
     if request.method == 'POST':
         data = request.get_json() if request.is_json else request.form
@@ -167,48 +187,9 @@ def nuevo_viaje():
     
     return render_template('nuevo_viaje.html')
 
-@app.route('/viaje/<int:viaje_id>/gasto', methods=['POST'])
-def agregar_gasto(viaje_id):
-    data = request.get_json()
-    
-    gasto = Gasto(
-        viaje_id=viaje_id,
-        categoria=data['categoria'],
-        descripcion=data['descripcion'],
-        monto=float(data['monto']),
-        fecha=datetime.strptime(data['fecha'], '%Y-%m-%d').date(),
-        moneda=data.get('moneda', 'USD')
-    )
-    
-    db.session.add(gasto)
-    db.session.flush()  # Para que el gasto esté disponible en la relación
-    
-    # Actualizar presupuesto gastado - solo suma todos los gastos del viaje
-    viaje = Viaje.query.get(viaje_id)
-    viaje.presupuesto_gastado = sum(g.monto for g in viaje.gastos)
-    
-    db.session.commit()
-    
-    return jsonify({'success': True, 'gasto_id': gasto.id})
+# Ruta de gastos movida a app/routes/gastos.py
 
-@app.route('/viaje/<int:viaje_id>/actividad', methods=['POST'])
-def agregar_actividad(viaje_id):
-    data = request.get_json()
-    
-    actividad = Actividad(
-        viaje_id=viaje_id,
-        destino=data.get('destino', 'general'),
-        nombre=data['nombre'],
-        fecha=datetime.strptime(data['fecha'], '%Y-%m-%d').date(),
-        hora=datetime.strptime(data['hora'], '%H:%M').time() if data.get('hora') else None,
-        ubicacion=data.get('ubicacion', ''),
-        descripcion=data.get('descripcion', '')
-    )
-    
-    db.session.add(actividad)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'actividad_id': actividad.id})
+# Ruta de actividades movida a app/routes/actividades.py
 
 @app.route('/viaje/<int:viaje_id>/documento', methods=['POST'])
 def agregar_documento(viaje_id):
@@ -489,13 +470,7 @@ def eliminar_parada(parada_id):
             'message': f'Error al eliminar parada: {str(e)}'
         }), 500
 
-@app.route('/actividad/<int:actividad_id>/completar', methods=['POST'])
-def completar_actividad(actividad_id):
-    actividad = Actividad.query.get_or_404(actividad_id)
-    actividad.completada = not actividad.completada
-    db.session.commit()
-    
-    return jsonify({'success': True, 'completada': actividad.completada})
+# Ruta de completar actividad movida a app/routes/actividades.py
 
 @app.route('/admin/reordenar-todos-viajes', methods=['POST'])
 def reordenar_todos_viajes():

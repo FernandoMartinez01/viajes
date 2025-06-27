@@ -14,6 +14,26 @@ def register_blueprints(app):
     from .viajes import viajes_bp
     app.register_blueprint(viajes_bp)
     
+    # Importar y registrar blueprint de gastos
+    from .gastos import gastos_bp
+    app.register_blueprint(gastos_bp)
+    
+    # Importar y registrar blueprint de actividades
+    from .actividades import actividades_bp
+    app.register_blueprint(actividades_bp)
+    
+    # Importar y registrar blueprint de documentos
+    from .documentos import documentos_bp
+    app.register_blueprint(documentos_bp)
+    
+    # Importar y registrar blueprint de transportes
+    from .transportes import transportes_bp
+    app.register_blueprint(transportes_bp)
+    
+    # Importar y registrar blueprint de alojamientos
+    from .alojamientos import alojamientos_bp
+    app.register_blueprint(alojamientos_bp)
+    
     print("✅ Blueprints registrados correctamente")
 
 # Exportar función principal
