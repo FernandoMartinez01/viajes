@@ -27,6 +27,10 @@ Documento = models['Documento']
 Transporte = models['Transporte']
 Alojamiento = models['Alojamiento']
 
+# Inicializar servicio de base de datos
+from app.services import database_service
+database_service.init_service(app, db, models)
+
 # Registrar blueprints
 from app.routes import register_blueprints
 register_blueprints(app)
@@ -37,19 +41,12 @@ from app.routes.main import init_main_routes
 # Función para inicializar blueprints con dependencias
 def init_blueprints_dependencies():
     """Inicializa los blueprints con sus dependencias necesarias."""
-    # Funciones helper para manejar _db_initialized de forma segura
-    def get_db_initialized_status():
-        return globals().get('_db_initialized', False)
-    
-    def set_db_initialized_status(status):
-        globals()['_db_initialized'] = status
-    
-    # Preparar funciones para las rutas principales
+    # Preparar funciones para las rutas principales usando el servicio de DB
     db_functions = {
-        'ensure_db_initialized': ensure_db_initialized,
-        'init_db_auto': init_db_auto,
-        'get_db_initialized_status': get_db_initialized_status,
-        'set_db_initialized_status': set_db_initialized_status
+        'ensure_db_initialized': database_service.ensure_initialized,
+        'init_db_auto': database_service.init_database,
+        'get_db_initialized_status': lambda: database_service.is_initialized,
+        'set_db_initialized_status': database_service.set_initialized
     }
     
     # Inicializar rutas principales
@@ -80,48 +77,7 @@ def init_blueprints_dependencies():
     init_alojamientos_routes(models, db)
 
 # Variable global para controlar la inicialización
-_db_initialized = False
-
-# Inicializar base de datos automáticamente
-def init_db_auto():
-    """Función para inicializar DB que se ejecuta solo cuando es necesario"""
-    global _db_initialized
-    
-    if _db_initialized:
-        return True
-        
-    try:
-        print("🔄 Inicializando base de datos...")
-        
-        # Crear el directorio si no existe (solo para SQLite local)
-        db_uri = app.config['SQLALCHEMY_DATABASE_URI']
-        if db_uri.startswith('sqlite:///'):
-            db_path = db_uri.replace('sqlite:///', '')
-            db_dir = os.path.dirname(db_path)
-            if db_dir and not os.path.exists(db_dir):
-                os.makedirs(db_dir, exist_ok=True)
-                print(f"📁 Directorio de DB creado: {db_dir}")
-        
-        db.create_all()
-        print("✅ Tablas de base de datos verificadas/creadas correctamente")
-        
-        # Verificar que la conexión funciona
-        viajes_count = Viaje.query.count()
-        print(f"📊 Base de datos conectada correctamente. Viajes existentes: {viajes_count}")
-        
-        _db_initialized = True
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error al crear tablas: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-def ensure_db_initialized():
-    """Garantiza que la DB esté inicializada antes de cualquier operación"""
-    if not _db_initialized:
-        init_db_auto()
+# Funciones de base de datos movidas a app/services/database.py
 
 # Headers de respuesta para desarrollo
 @app.after_request
@@ -497,7 +453,7 @@ app.template_filter('porcentaje_presupuesto')(porcentaje_presupuesto)
 
 # Crear tablas automáticamente en el primer acceso (función legacy)
 def init_db():
-    return init_db_auto()
+    return database_service.init_database()
 
 # Rutas de health check y init-db movidas a app/routes/main.py
 
