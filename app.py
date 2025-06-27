@@ -54,6 +54,10 @@ def init_blueprints_dependencies():
     
     # Inicializar rutas principales
     init_main_routes(models, db_functions)
+    
+    # Inicializar rutas de viajes
+    from app.routes.viajes import init_viajes_routes
+    init_viajes_routes(models, db)
 
 # Variable global para controlar la inicialización
 _db_initialized = False
@@ -117,116 +121,9 @@ init_blueprints_dependencies()
 
 # Rutas principales movidas a app/routes/main.py
 
-@app.route('/viaje/<int:viaje_id>')
-def ver_viaje(viaje_id):
-    viaje = Viaje.query.get_or_404(viaje_id)
-    
-    # Agrupar y ordenar actividades por destino y fecha/hora
-    actividades_agrupadas = {}
-    for actividad in viaje.actividades:
-        destino = actividad.destino or 'general'
-        if destino not in actividades_agrupadas:
-            actividades_agrupadas[destino] = []
-        actividades_agrupadas[destino].append(actividad)
-    
-    # Ordenar actividades dentro de cada destino por fecha y hora
-    for destino in actividades_agrupadas:
-        actividades_agrupadas[destino].sort(key=lambda a: (
-            a.fecha,
-            a.hora if a.hora else datetime.min.time()
-        ))
-    
-    # Crear diccionario ordenado: 'general' primero, luego resto alfabéticamente
-    from collections import OrderedDict
-    actividades_ordenadas = OrderedDict()
-    
-    # Primero 'general' si existe
-    if 'general' in actividades_agrupadas:
-        actividades_ordenadas['general'] = actividades_agrupadas['general']
-    
-    # Luego el resto ordenado alfabéticamente
-    for destino in sorted(actividades_agrupadas.keys()):
-        if destino != 'general':
-            actividades_ordenadas[destino] = actividades_agrupadas[destino]
-    
-    return render_template('viaje.html', 
-                         viaje=viaje, 
-                         actividades_agrupadas=actividades_ordenadas,
-                         hoy=date.today())
+# Rutas de viajes movidas a app/routes/viajes.py
 
-@app.route('/viaje/<int:viaje_id>/eliminar', methods=['POST'])
-def eliminar_viaje(viaje_id):
-    try:
-        viaje = Viaje.query.get_or_404(viaje_id)
-        nombre_viaje = viaje.nombre
-        
-        print(f"Iniciando eliminación del viaje: {nombre_viaje} (ID: {viaje_id})")
-        
-        # Contar elementos relacionados antes de eliminar (para logs)
-        num_paradas = len(viaje.paradas)
-        num_gastos = len(viaje.gastos)
-        num_actividades = len(viaje.actividades)
-        num_documentos = len(viaje.documentos)
-        num_transportes = len(viaje.transportes)
-        num_alojamientos = len(viaje.alojamientos)
-        
-        print(f"Elementos a eliminar:")
-        print(f"  - Paradas: {num_paradas}")
-        print(f"  - Gastos: {num_gastos}")
-        print(f"  - Actividades: {num_actividades}")
-        print(f"  - Documentos: {num_documentos}")
-        print(f"  - Transportes: {num_transportes}")
-        print(f"  - Alojamientos: {num_alojamientos}")
-        
-        # Verificación adicional: eliminar explícitamente elementos relacionados
-        # (aunque el cascade debería manejar esto automáticamente)
-        
-        # Eliminar paradas
-        Parada.query.filter_by(viaje_id=viaje_id).delete()
-        print("  ✓ Paradas eliminadas")
-        
-        # Eliminar gastos
-        Gasto.query.filter_by(viaje_id=viaje_id).delete()
-        print("  ✓ Gastos eliminados")
-        
-        # Eliminar actividades
-        Actividad.query.filter_by(viaje_id=viaje_id).delete()
-        print("  ✓ Actividades eliminadas")
-        
-        # Eliminar documentos
-        Documento.query.filter_by(viaje_id=viaje_id).delete()
-        print("  ✓ Documentos eliminados")
-        
-        # Eliminar transportes
-        Transporte.query.filter_by(viaje_id=viaje_id).delete()
-        print("  ✓ Transportes eliminados")
-        
-        # Eliminar alojamientos
-        Alojamiento.query.filter_by(viaje_id=viaje_id).delete()
-        print("  ✓ Alojamientos eliminados")
-        
-        # Finalmente, eliminar el viaje
-        db.session.delete(viaje)
-        print("  ✓ Viaje eliminado")
-        
-        # Commit de todos los cambios
-        db.session.commit()
-        print(f"✅ Eliminación completada exitosamente")
-        
-        total_elementos = num_paradas + num_gastos + num_actividades + num_documentos + num_transportes + num_alojamientos
-        
-        return jsonify({
-            'success': True,
-            'message': f'Viaje "{nombre_viaje}" y {total_elementos} elementos relacionados eliminados correctamente'
-        })
-        
-    except Exception as e:
-        print(f"❌ Error al eliminar viaje: {str(e)}")
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error al eliminar el viaje: {str(e)}'
-        }), 500
+# Rutas de eliminación de viajes movidas a app/routes/viajes.py
 
 @app.route('/nuevo-viaje', methods=['GET', 'POST'])
 def nuevo_viaje():

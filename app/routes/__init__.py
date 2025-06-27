@@ -10,6 +10,10 @@ def register_blueprints(app):
     from .main import main_bp
     app.register_blueprint(main_bp)
     
+    # Importar y registrar blueprint de viajes
+    from .viajes import viajes_bp
+    app.register_blueprint(viajes_bp)
+    
     print("✅ Blueprints registrados correctamente")
 
 # Exportar función principal
