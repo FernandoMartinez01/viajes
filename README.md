@@ -78,7 +78,146 @@ Una aplicación web progresiva (PWA) para organizar y controlar todos los aspect
 viaje/
 ├── app.py                 # Aplicación principal Flask
 ├── requirements.txt       # Dependencias Python
-├── README.md             # Este archivo
+├── # 🧳 Mi Viaje - Control de Viajes
+
+Una aplicación web progresiva (PWA) para organizar y controlar todos los aspectos de tus viajes. Diseñada para ser instalada como app nativa en dispositivos móviles.
+
+## 🌟 Características
+
+- 📱 **PWA Completa**: Instalable como app nativa en Android/iPhone
+- ✈️ **Gestión de Viajes**: Crea, planifica y organiza tus viajes
+- 🏨 **Alojamientos**: Gestiona reservas de hoteles con check-in/out
+- 🚌 **Transportes**: Organiza vuelos, trenes y otros transportes
+- 💰 **Control de Gastos**: Seguimiento de presupuesto por categorías
+- 📋 **Actividades**: Planifica tu itinerario por destinos
+- 📄 **Documentos**: Gestiona pasaportes, visas y reservas
+- 🗺️ **Mapas**: Visualización con Leaflet/OpenStreetMap
+- 🌙 **Modo Oscuro**: Interfaz adaptable al sistema
+- 📱 **Mobile-First**: Optimizado para dispositivos móviles
+- 🔄 **Modo Offline**: Funciona sin conexión a internet
+
+## 🚀 Instalación como App Móvil
+
+### En Android (Chrome/Edge):
+1. Abre la aplicación en tu navegador
+2. Toca el menú (⋮) → "Instalar aplicación" o "Agregar a pantalla de inicio"
+3. Confirma la instalación
+4. La app aparecerá en tu lista de aplicaciones
+
+### En iPhone/iPad (Safari):
+1. Abre la aplicación en Safari
+2. Toca el botón de compartir (□↗)
+3. Selecciona "Agregar a pantalla de inicio"
+4. Personaliza el nombre si deseas
+5. Toca "Agregar"
+
+### En Escritorio:
+1. En Chrome/Edge: aparecerá un ícono de instalación en la barra de direcciones
+2. Haz clic en él y confirma la instalación
+3. La app se abrirá en su propia ventana
+
+## 🌐 Acceso en Vivo
+
+**URL de la aplicación:** [https://viajes-production-5454.up.railway.app](https://viajes-production-5454.up.railway.app)
+
+> Nota: Al ser una app sin autenticación, todos los usuarios comparten los mismos datos. Úsala responsablemente en grupo.
+
+## 💻 Desarrollo Local
+
+### Requisitos
+- Python 3.8+
+- pip
+
+### Instalación
+```bash
+# Clonar el repositorio
+git clone https://github.com/FernandoMartinez01/viajes.git
+cd viajes
+
+# Crear entorno virtual
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# o source .venv/bin/activate  # Linux/Mac
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar la aplicación
+python app.py
+```
+
+La aplicación estará disponible en `http://localhost:5000`
+
+### Regenerar Iconos PWA
+```bash
+# Iconos básicos (solo requiere Pillow)
+python generate_icons_simple.py
+
+# Iconos avanzados (requiere cairocffi - complejo en Windows)
+python generate_icons.py
+```
+
+## 🛠️ Tecnologías
+
+- **Backend**: Python Flask 3.0+ con SQLAlchemy
+- **Frontend**: HTML5, CSS3 (Mobile-First), JavaScript vanilla
+- **Base de Datos**: SQLite (desarrollo) / PostgreSQL (producción)
+- **PWA**: Service Worker, Web App Manifest
+- **Mapas**: Leaflet.js con OpenStreetMap
+- **Iconos**: Material Icons
+- **Hosting**: Railway / Render
+
+## 📱 Funcionalidades
+
+### Gestión de Viajes
+- Crear viajes con fechas y presupuesto
+- Múltiples paradas/destinos con reordenamiento automático
+- Vista de cronología y planificación
+
+### Control de Gastos
+- Registro por categorías (alojamiento, comida, transporte, etc.)
+- Seguimiento de presupuesto en tiempo real
+- Visualización de gastos por destino
+
+### Actividades e Itinerario
+- Planificación de actividades por destino y fecha
+- Marcar actividades como completadas
+- Organización automática por ubicación
+
+### Documentos
+- Gestión de pasaportes, visas y documentos
+- Recordatorios de vencimiento
+- Organización de reservas y confirmaciones
+
+### Transportes y Alojamientos
+- Detalles completos de vuelos con horarios
+- Gestión de reservas de hoteles
+- Check-in/check-out automático
+
+## 🤝 Contribuir
+
+¿Quieres mejorar la app? 
+
+1. Fork el proyecto
+2. Crea una rama para tu funcionalidad (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -m 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia MIT. Ver `LICENSE` para más detalles.
+
+## 🔧 Estado del Proyecto
+
+- ✅ PWA completamente funcional
+- ✅ Instalable en dispositivos móviles
+- ✅ Modo offline operativo
+- ✅ Interfaz mobile-first
+- ✅ Deploy automático en Railway/Render
+- 🔄 Integración de mapas en progreso
+- 🔄 Notificaciones push (próximamente)
+- 🔄 Exportación a PDF (próximamente).md             # Este archivo
 ├── static/               # Archivos estáticos
 │   ├── css/
 │   │   └── style.css     # Estilos principales
