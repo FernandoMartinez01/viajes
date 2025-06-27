@@ -130,12 +130,6 @@ class Alojamiento(db.Model):
     codigo_pin = db.Column(db.String(20))  # Opcional
     numero_checkin = db.Column(db.String(50))  # Opcional
 
-# Inicializar base de datos automáticamente al arrancar
-@app.before_first_request
-def init_database():
-    """Inicializar la base de datos en la primera petición"""
-    init_db()
-
 # Rutas principales
 @app.route('/')
 def index():
