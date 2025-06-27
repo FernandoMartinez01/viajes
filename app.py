@@ -16,9 +16,11 @@ if database_url:
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
-    # Desarrollo (SQLite) - Usar ruta absoluta
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "instance", "viaje.db")}'
+    # Desarrollo/Render (SQLite) - Usar directorio temporal
+    import tempfile
+    db_path = os.path.join(tempfile.gettempdir(), 'viaje.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    print(f"🗄️  Usando SQLite en: {db_path}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -648,8 +650,21 @@ def porcentaje_presupuesto(gastado, total):
 def init_db():
     try:
         with app.app_context():
+            # Crear el directorio si no existe (solo para SQLite local)
+            db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+            if db_uri.startswith('sqlite:///'):
+                db_path = db_uri.replace('sqlite:///', '')
+                db_dir = os.path.dirname(db_path)
+                if db_dir and not os.path.exists(db_dir):
+                    os.makedirs(db_dir, exist_ok=True)
+                    print(f"📁 Directorio de DB creado: {db_dir}")
+            
             db.create_all()
             print("✅ Tablas de base de datos verificadas/creadas correctamente")
+            
+            # Verificar que la conexión funciona
+            viajes_count = Viaje.query.count()
+            print(f"📊 Base de datos conectada correctamente. Viajes existentes: {viajes_count}")
             return True
     except Exception as e:
         print(f"❌ Error al crear tablas: {e}")
