@@ -637,15 +637,6 @@ def reordenar_todos_viajes():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Crear tablas automáticamente en el primer acceso
-try:
-    # Para Flask moderno, usar app_context directamente
-    with app.app_context():
-        db.create_all()
-        print("✅ Tablas de base de datos verificadas/creadas al inicio")
-except Exception as e:
-    print(f"❌ Error al crear tablas: {e}")
-
 # Función helper para templates
 @app.template_filter('porcentaje_presupuesto')
 def porcentaje_presupuesto(gastado, total):
@@ -653,7 +644,46 @@ def porcentaje_presupuesto(gastado, total):
         return 0
     return min(100, (gastado / total) * 100)
 
+# Crear tablas automáticamente en el primer acceso
+def init_db():
+    try:
+        with app.app_context():
+            db.create_all()
+            print("✅ Tablas de base de datos verificadas/creadas correctamente")
+            return True
+    except Exception as e:
+        print(f"❌ Error al crear tablas: {e}")
+        return False
+
+# Ruta de health check para Railway
+@app.route('/health')
+def health_check():
+    try:
+        # Verificar que la app y la DB están funcionando
+        with app.app_context():
+            viajes_count = Viaje.query.count()
+            return jsonify({
+                'status': 'healthy',
+                'database': 'connected',
+                'viajes': viajes_count
+            }), 200
+    except Exception as e:
+        print(f"Health check failed: {e}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
+    # Inicializar base de datos
+    if not init_db():
+        print("⚠️  Continuando sin inicialización de DB...")
+    
     # Para desarrollo local y producción
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    
+    print(f"🚀 Iniciando servidor en puerto {port}")
+    print(f"🔧 Modo debug: {debug_mode}")
+    
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
