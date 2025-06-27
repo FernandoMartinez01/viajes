@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date
 from config.settings import Config
+from app.utils.helpers import porcentaje_presupuesto
 
 app = Flask(__name__)
 
@@ -680,12 +681,8 @@ def reordenar_todos_viajes():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Función helper para templates
-@app.template_filter('porcentaje_presupuesto')
-def porcentaje_presupuesto(gastado, total):
-    if total <= 0:
-        return 0
-    return min(100, (gastado / total) * 100)
+# Registrar función helper como filtro de template
+app.template_filter('porcentaje_presupuesto')(porcentaje_presupuesto)
 
 # Crear tablas automáticamente en el primer acceso (función legacy)
 def init_db():
