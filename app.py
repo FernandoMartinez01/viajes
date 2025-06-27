@@ -14,6 +14,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = Config.get_sqlalchemy_track_modif
 
 db = SQLAlchemy(app)
 
+# Inicializar modelos y obtener las clases
+from app.models import init_models
+models = init_models(db)
+
+# Asignar modelos a variables globales para fácil acceso
+Viaje = models['Viaje']
+Parada = models['Parada']
+Gasto = models['Gasto']
+Actividad = models['Actividad']
+Documento = models['Documento']
+Transporte = models['Transporte']
+Alojamiento = models['Alojamiento']
+
 # Variable global para controlar la inicialización
 _db_initialized = False
 
@@ -69,98 +82,7 @@ def after_request(response):
     response.headers.add('Expires', '0')
     return response
 
-# Modelos de base de datos
-class Viaje(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(200), nullable=False)  # Nombre general del viaje
-    fecha_inicio = db.Column(db.Date, nullable=False)
-    fecha_fin = db.Column(db.Date, nullable=False)
-    presupuesto_total = db.Column(db.Float, default=0.0)
-    presupuesto_gastado = db.Column(db.Float, default=0.0)
-    notas = db.Column(db.Text)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relaciones
-    paradas = db.relationship('Parada', backref='viaje', lazy=True, cascade='all, delete-orphan', order_by='Parada.orden')
-    gastos = db.relationship('Gasto', backref='viaje', lazy=True, cascade='all, delete-orphan')
-    actividades = db.relationship('Actividad', backref='viaje', lazy=True, cascade='all, delete-orphan')
-    documentos = db.relationship('Documento', backref='viaje', lazy=True, cascade='all, delete-orphan')
-    transportes = db.relationship('Transporte', backref='viaje', lazy=True, cascade='all, delete-orphan', order_by='Transporte.fecha_salida')
-    alojamientos = db.relationship('Alojamiento', backref='viaje', lazy=True, cascade='all, delete-orphan', order_by='Alojamiento.fecha_entrada')
-
-class Parada(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    viaje_id = db.Column(db.Integer, db.ForeignKey('viaje.id'), nullable=False)
-    destino = db.Column(db.String(100), nullable=False)
-    orden = db.Column(db.Integer, nullable=False)  # Orden de la parada en el viaje
-    fecha_llegada = db.Column(db.Date, nullable=False)
-    fecha_salida = db.Column(db.Date, nullable=False)
-    notas = db.Column(db.Text)
-    
-    # Constraint para evitar paradas duplicadas en el mismo orden
-    __table_args__ = (db.UniqueConstraint('viaje_id', 'orden', name='_viaje_orden_uc'),)
-
-class Gasto(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    viaje_id = db.Column(db.Integer, db.ForeignKey('viaje.id'), nullable=False)
-    categoria = db.Column(db.String(50), nullable=False)  # transporte, comida, hospedaje, etc.
-    descripcion = db.Column(db.String(200), nullable=False)
-    monto = db.Column(db.Float, nullable=False)
-    fecha = db.Column(db.Date, nullable=False, default=date.today)
-    moneda = db.Column(db.String(3), default='USD')
-
-class Actividad(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    viaje_id = db.Column(db.Integer, db.ForeignKey('viaje.id'), nullable=False)
-    destino = db.Column(db.String(100), nullable=False, default='general')  # Destino/lugar de la actividad
-    nombre = db.Column(db.String(200), nullable=False)
-    fecha = db.Column(db.Date, nullable=False)
-    hora = db.Column(db.Time)
-    ubicacion = db.Column(db.String(200))
-    descripcion = db.Column(db.Text)
-    completada = db.Column(db.Boolean, default=False)
-
-class Documento(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    viaje_id = db.Column(db.Integer, db.ForeignKey('viaje.id'), nullable=False)
-    tipo = db.Column(db.String(50), nullable=False)  # pasaporte, visa, reserva, etc.
-    nombre = db.Column(db.String(200), nullable=False)
-    numero = db.Column(db.String(100))
-    fecha_vencimiento = db.Column(db.Date)
-    notas = db.Column(db.Text)
-
-class Transporte(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    viaje_id = db.Column(db.Integer, db.ForeignKey('viaje.id'), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False, default='vuelo')  # vuelo, tren, bus, etc.
-    origen = db.Column(db.String(100), nullable=False)
-    destino = db.Column(db.String(100), nullable=False)
-    codigo_reserva = db.Column(db.String(50))
-    fecha_salida = db.Column(db.Date, nullable=False)
-    hora_salida = db.Column(db.Time)
-    fecha_llegada = db.Column(db.Date, nullable=False)
-    hora_llegada = db.Column(db.Time)
-    aerolinea = db.Column(db.String(100))
-    numero_vuelo = db.Column(db.String(20))
-    terminal = db.Column(db.String(20))
-    puerta = db.Column(db.String(10))
-    asiento = db.Column(db.String(10))
-    notas = db.Column(db.Text)
-
-class Alojamiento(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    viaje_id = db.Column(db.Integer, db.ForeignKey('viaje.id'), nullable=False)
-    destino = db.Column(db.String(100), nullable=False)  # Filtrado por paradas del viaje
-    nombre = db.Column(db.String(200), nullable=False)
-    direccion = db.Column(db.String(300), nullable=False)
-    fecha_entrada = db.Column(db.Date, nullable=False)
-    horario_checkin = db.Column(db.Time, nullable=False)
-    fecha_salida = db.Column(db.Date, nullable=False)
-    horario_checkout = db.Column(db.Time, nullable=False)
-    incluye_desayuno = db.Column(db.Boolean, default=False)
-    numero_confirmacion = db.Column(db.String(100))  # Opcional
-    codigo_pin = db.Column(db.String(20))  # Opcional
-    numero_checkin = db.Column(db.String(50))  # Opcional
+# Modelos de base de datos importados desde app.models
 
 # Rutas principales
 @app.route('/')
