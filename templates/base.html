@@ -61,11 +61,11 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+        <a href="{{ url_for('main.index') }}" class="nav-item {% if request.endpoint == 'main.index' %}active{% endif %}">
             <span class="material-icons">home</span>
             <span class="nav-label">Inicio</span>
         </a>
-        <a href="{{ url_for('nuevo_viaje') }}" class="nav-item {% if request.endpoint == 'nuevo_viaje' %}active{% endif %}">
+        <a href="{{ url_for('viajes.nuevo_viaje') }}" class="nav-item {% if request.endpoint == 'viajes.nuevo_viaje' %}active{% endif %}">
             <span class="material-icons">add_circle</span>
             <span class="nav-label">Nuevo</span>
         </a>

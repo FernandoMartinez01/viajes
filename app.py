@@ -31,13 +31,6 @@ Alojamiento = models['Alojamiento']
 from app.services import database_service
 database_service.init_service(app, db, models)
 
-# Registrar blueprints
-from app.routes import register_blueprints
-register_blueprints(app)
-
-# Inicializar rutas principales con modelos y funciones necesarias
-from app.routes.main import init_main_routes
-
 # Función para inicializar blueprints con dependencias
 def init_blueprints_dependencies():
     """Inicializa los blueprints con sus dependencias necesarias."""
@@ -50,6 +43,7 @@ def init_blueprints_dependencies():
     }
     
     # Inicializar rutas principales
+    from app.routes.main import init_main_routes
     init_main_routes(models, db_functions)
     
     # Inicializar rutas de viajes
@@ -76,6 +70,13 @@ def init_blueprints_dependencies():
     from app.routes.alojamientos import init_alojamientos_routes
     init_alojamientos_routes(models, db)
 
+# Inicializar blueprints con sus dependencias ANTES de registrarlos
+init_blueprints_dependencies()
+
+# Registrar blueprints
+from app.routes import register_blueprints
+register_blueprints(app)
+
 # Variable global para controlar la inicialización
 # Funciones de base de datos movidas a app/services/database.py
 
@@ -92,9 +93,6 @@ def after_request(response):
 
 # Modelos de base de datos importados desde app.models
 
-# Inicializar blueprints con sus dependencias
-init_blueprints_dependencies()
-
 # Rutas principales movidas a app/routes/main.py
 
 # Rutas de viajes movidas a app/routes/viajes.py
@@ -102,351 +100,20 @@ init_blueprints_dependencies()
 # Rutas de eliminación de viajes movidas a app/routes/viajes.py
 
 # Ruta de nuevo viaje movida a app/routes/viajes.py
-def nuevo_viaje():
-    if request.method == 'POST':
-        data = request.get_json() if request.is_json else request.form
-        
-        # Crear el viaje principal
-        viaje = Viaje(
-            nombre=data['nombre'],
-            fecha_inicio=datetime.strptime(data['fecha_inicio'], '%Y-%m-%d').date(),
-            fecha_fin=datetime.strptime(data['fecha_fin'], '%Y-%m-%d').date(),
-            presupuesto_total=float(data.get('presupuesto_total', 0)),
-            notas=data.get('notas', '')
-        )
-        
-        db.session.add(viaje)
-        db.session.flush()  # Para obtener el ID del viaje
-        
-        # Procesar paradas
-        paradas_data = data.get('paradas', [])
-        if isinstance(paradas_data, str):
-            import json
-            paradas_data = json.loads(paradas_data)
-        
-        for i, parada_data in enumerate(paradas_data):
-            parada = Parada(
-                viaje_id=viaje.id,
-                destino=parada_data['destino'],
-                orden=i + 1,
-                fecha_llegada=datetime.strptime(parada_data['fecha_llegada'], '%Y-%m-%d').date(),
-                fecha_salida=datetime.strptime(parada_data['fecha_salida'], '%Y-%m-%d').date(),
-                notas=parada_data.get('notas', '')
-            )
-            db.session.add(parada)
-        
-        db.session.commit()
-        
-        if request.is_json:
-            return jsonify({'success': True, 'viaje_id': viaje.id})
-        return redirect(url_for('ver_viaje', viaje_id=viaje.id))
-    
-    return render_template('nuevo_viaje.html')
 
 # Ruta de gastos movida a app/routes/gastos.py
 
 # Ruta de actividades movida a app/routes/actividades.py
 
-@app.route('/viaje/<int:viaje_id>/documento', methods=['POST'])
-def agregar_documento(viaje_id):
-    data = request.get_json()
-    
-    documento = Documento(
-        viaje_id=viaje_id,
-        tipo=data['tipo'],
-        nombre=data['nombre'],
-        numero=data.get('numero', ''),
-        fecha_vencimiento=datetime.strptime(data['fecha_vencimiento'], '%Y-%m-%d').date() if data.get('fecha_vencimiento') else None,
-        notas=data.get('notas', '')
-    )
-    
-    db.session.add(documento)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'documento_id': documento.id})
+# Rutas de documentos movidas a app/routes/documentos.py
 
-@app.route('/viaje/<int:viaje_id>/transporte', methods=['POST'])
-def agregar_transporte(viaje_id):
-    data = request.get_json()
-    
-    transporte = Transporte(
-        viaje_id=viaje_id,
-        tipo=data.get('tipo', 'vuelo'),
-        origen=data['origen'],
-        destino=data['destino'],
-        codigo_reserva=data.get('codigo_reserva', ''),
-        fecha_salida=datetime.strptime(data['fecha_salida'], '%Y-%m-%d').date(),
-        hora_salida=datetime.strptime(data['hora_salida'], '%H:%M').time() if data.get('hora_salida') else None,
-        fecha_llegada=datetime.strptime(data['fecha_llegada'], '%Y-%m-%d').date(),
-        hora_llegada=datetime.strptime(data['hora_llegada'], '%H:%M').time() if data.get('hora_llegada') else None,
-        aerolinea=data.get('aerolinea', ''),
-        numero_vuelo=data.get('numero_vuelo', ''),
-        terminal=data.get('terminal', ''),
-        puerta=data.get('puerta', ''),
-        asiento=data.get('asiento', ''),
-        notas=data.get('notas', '')
-    )
-    
-    db.session.add(transporte)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'transporte_id': transporte.id})
+# Rutas de transportes movidas a app/routes/transportes.py
 
-@app.route('/viaje/<int:viaje_id>/alojamiento', methods=['POST'])
-def agregar_alojamiento(viaje_id):
-    data = request.get_json()
-    
-    alojamiento = Alojamiento(
-        viaje_id=viaje_id,
-        destino=data['destino'],
-        nombre=data['nombre'],
-        direccion=data['direccion'],
-        fecha_entrada=datetime.strptime(data['fecha_entrada'], '%Y-%m-%d').date(),
-        horario_checkin=datetime.strptime(data['horario_checkin'], '%H:%M').time(),
-        fecha_salida=datetime.strptime(data['fecha_salida'], '%Y-%m-%d').date(),
-        horario_checkout=datetime.strptime(data['horario_checkout'], '%H:%M').time(),
-        incluye_desayuno=data.get('incluye_desayuno', False),
-        numero_confirmacion=data.get('numero_confirmacion', ''),
-        codigo_pin=data.get('codigo_pin', ''),
-        numero_checkin=data.get('numero_checkin', '')
-    )
-    
-    db.session.add(alojamiento)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'alojamiento_id': alojamiento.id})
+# Rutas de alojamientos movidas a app/routes/alojamientos.py
 
-@app.route('/viaje/<int:viaje_id>/parada', methods=['POST'])
-def agregar_parada(viaje_id):
-    data = request.get_json()
-    
-    parada = Parada(
-        viaje_id=viaje_id,
-        destino=data['destino'],
-        orden=999,  # Orden temporal, se reorganizará automáticamente
-        fecha_llegada=datetime.strptime(data['fecha_llegada'], '%Y-%m-%d').date(),
-        fecha_salida=datetime.strptime(data['fecha_salida'], '%Y-%m-%d').date(),
-        notas=data.get('notas', '')
-    )
-    
-    db.session.add(parada)
-    db.session.commit()
-    
-    # Reordenar automáticamente todas las paradas por fecha
-    reordenar_paradas_por_fecha(viaje_id)
-    
-    return jsonify({'success': True, 'parada_id': parada.id})
-
-def reordenar_paradas_por_fecha(viaje_id):
-    """
-    Reordena automáticamente todas las paradas de un viaje por fecha de llegada.
-    En caso de fechas iguales, usa estos criterios de desempate:
-    1. Fecha de salida (más temprana primero)
-    2. Nombre del destino (alfabéticamente)
-    3. ID de la parada (orden de creación)
-    """
-    try:
-        print(f"Reordenando paradas del viaje {viaje_id} por fecha de llegada...")
-        
-        # Obtener todas las paradas del viaje
-        paradas = Parada.query.filter_by(viaje_id=viaje_id).all()
-        
-        if len(paradas) <= 1:
-            print("Solo hay una parada o menos, no se necesita reordenar")
-            return
-        
-        # Ordenar por múltiples criterios
-        paradas_ordenadas = sorted(paradas, key=lambda p: (
-            p.fecha_llegada,           # 1. Fecha de llegada (principal)
-            p.fecha_salida,            # 2. Fecha de salida (desempate)
-            p.destino.lower(),         # 3. Destino alfabéticamente
-            p.id                       # 4. ID (orden de creación)
-        ))
-        
-        print("Nueva secuencia de paradas:")
-        
-        # PASO 1: Asignar órdenes temporales únicos (negativos para evitar conflictos)
-        print("Paso 1: Asignando órdenes temporales...")
-        for i, parada in enumerate(paradas_ordenadas):
-            orden_temporal = -(i + 1000)  # Usar números negativos muy grandes
-            print(f"  Temp {orden_temporal}: {parada.destino} - Llegada: {parada.fecha_llegada}")
-            parada.orden = orden_temporal
-        
-        # Hacer flush para aplicar cambios temporales
-        db.session.flush()
-        
-        # PASO 2: Asignar los órdenes finales correctos
-        print("Paso 2: Asignando órdenes finales...")
-        for i, parada in enumerate(paradas_ordenadas):
-            nuevo_orden = i + 1
-            print(f"  {nuevo_orden}. {parada.destino} - Llegada: {parada.fecha_llegada}")
-            parada.orden = nuevo_orden
-        
-        # Commit final
-        db.session.commit()
-        print("Reordenamiento automático completado exitosamente")
-        
-    except Exception as e:
-        print(f"Error al reordenar paradas por fecha: {str(e)}")
-        db.session.rollback()
-        raise
-
-@app.route('/viaje/<int:viaje_id>/reordenar-por-fecha', methods=['POST'])
-def reordenar_viaje_por_fecha(viaje_id):
-    """Endpoint para reordenar manualmente un viaje por fechas"""
-    try:
-        reordenar_paradas_por_fecha(viaje_id)
-        return jsonify({'success': True, 'message': 'Paradas reordenadas por fecha exitosamente'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/parada/<int:parada_id>/reordenar', methods=['POST'])
-def reordenar_parada(parada_id):
-    try:
-        data = request.get_json()
-        if not data or 'nuevo_orden' not in data:
-            return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
-            
-        nuevo_orden = int(data['nuevo_orden'])
-        
-        parada = Parada.query.get_or_404(parada_id)
-        viaje_id = parada.viaje_id
-        orden_actual = parada.orden
-        
-        print(f"Reordenando parada {parada_id} del orden {orden_actual} al orden {nuevo_orden}")
-        
-        if orden_actual == nuevo_orden:
-            print("El orden no ha cambiado, no se necesita actualizar")
-            return jsonify({'success': True})
-        
-        # Obtener todas las paradas del viaje ordenadas
-        paradas = Parada.query.filter_by(viaje_id=viaje_id).order_by(Parada.orden).all()
-        
-        # Crear una lista temporal con los nuevos órdenes
-        paradas_temp = []
-        for p in paradas:
-            if p.id == parada_id:
-                # Esta es la parada que estamos moviendo
-                continue
-            paradas_temp.append(p)
-        
-        # Insertar la parada movida en la nueva posición
-        # Ajustar posición ya que nuevo_orden es 1-indexed
-        nueva_posicion = nuevo_orden - 1
-        if nueva_posicion < 0:
-            nueva_posicion = 0
-        elif nueva_posicion > len(paradas_temp):
-            nueva_posicion = len(paradas_temp)
-            
-        paradas_temp.insert(nueva_posicion, parada)
-        
-        # Usar valores temporales negativos para evitar conflictos de constraint
-        print("Asignando órdenes temporales...")
-        for i, p in enumerate(paradas_temp):
-            p.orden = -(i + 1)  # Valores negativos temporales
-        
-        db.session.flush()  # Aplicar cambios temporales
-        
-        # Ahora asignar los órdenes finales correctos
-        print("Asignando órdenes finales...")
-        for i, p in enumerate(paradas_temp):
-            p.orden = i + 1  # Órdenes finales correctos
-        
-        db.session.commit()
-        
-        print(f"Reordenamiento completado exitosamente. Nueva secuencia:")
-        for p in paradas_temp:
-            print(f"  Parada {p.id} ({p.destino}): orden {p.orden}")
-        
-        return jsonify({'success': True})
-        
-    except Exception as e:
-        print(f"Error al reordenar parada: {str(e)}")
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Rutas para editar paradas
-@app.route('/parada/<int:parada_id>', methods=['PUT'])
-def editar_parada(parada_id):
-    try:
-        data = request.get_json()
-        parada = Parada.query.get_or_404(parada_id)
-        viaje_id = parada.viaje_id
-        
-        # Actualizar campos
-        parada.destino = data['destino']
-        parada.fecha_llegada = datetime.strptime(data['fecha_llegada'], '%Y-%m-%d').date()
-        parada.fecha_salida = datetime.strptime(data['fecha_salida'], '%Y-%m-%d').date()
-        parada.notas = data.get('notas', '')
-        
-        db.session.commit()
-        
-        # Reordenar automáticamente todas las paradas por fecha
-        reordenar_paradas_por_fecha(viaje_id)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Parada actualizada y reordenada correctamente'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error al actualizar parada: {str(e)}'
-        }), 500
-
-@app.route('/parada/<int:parada_id>', methods=['DELETE'])
-def eliminar_parada(parada_id):
-    try:
-        parada = Parada.query.get_or_404(parada_id)
-        viaje_id = parada.viaje_id
-        orden_eliminada = parada.orden
-        
-        # Eliminar la parada
-        db.session.delete(parada)
-        
-        # Reordenar las paradas restantes
-        Parada.query.filter(
-            Parada.viaje_id == viaje_id,
-            Parada.orden > orden_eliminada
-        ).update({Parada.orden: Parada.orden - 1})
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Parada eliminada correctamente'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error al eliminar parada: {str(e)}'
-        }), 500
+# Rutas de paradas movidas a app/routes/viajes.py
 
 # Ruta de completar actividad movida a app/routes/actividades.py
-
-@app.route('/admin/reordenar-todos-viajes', methods=['POST'])
-def reordenar_todos_viajes():
-    """Endpoint administrativo para reordenar todas las paradas de todos los viajes por fecha"""
-    try:
-        viajes = Viaje.query.all()
-        reordenados = 0
-        
-        for viaje in viajes:
-            if len(viaje.paradas) > 1:
-                print(f"Reordenando viaje: {viaje.nombre} (ID: {viaje.id})")
-                reordenar_paradas_por_fecha(viaje.id)
-                reordenados += 1
-        
-        return jsonify({
-            'success': True, 
-            'message': f'Se reordenaron {reordenados} viajes correctamente'
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Registrar función helper como filtro de template
 app.template_filter('porcentaje_presupuesto')(porcentaje_presupuesto)
