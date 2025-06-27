@@ -27,6 +27,34 @@ Documento = models['Documento']
 Transporte = models['Transporte']
 Alojamiento = models['Alojamiento']
 
+# Registrar blueprints
+from app.routes import register_blueprints
+register_blueprints(app)
+
+# Inicializar rutas principales con modelos y funciones necesarias
+from app.routes.main import init_main_routes
+
+# Función para inicializar blueprints con dependencias
+def init_blueprints_dependencies():
+    """Inicializa los blueprints con sus dependencias necesarias."""
+    # Funciones helper para manejar _db_initialized de forma segura
+    def get_db_initialized_status():
+        return globals().get('_db_initialized', False)
+    
+    def set_db_initialized_status(status):
+        globals()['_db_initialized'] = status
+    
+    # Preparar funciones para las rutas principales
+    db_functions = {
+        'ensure_db_initialized': ensure_db_initialized,
+        'init_db_auto': init_db_auto,
+        'get_db_initialized_status': get_db_initialized_status,
+        'set_db_initialized_status': set_db_initialized_status
+    }
+    
+    # Inicializar rutas principales
+    init_main_routes(models, db_functions)
+
 # Variable global para controlar la inicialización
 _db_initialized = False
 
@@ -84,21 +112,10 @@ def after_request(response):
 
 # Modelos de base de datos importados desde app.models
 
-# Rutas principales
-@app.route('/')
-def index():
-    # Asegurar que la DB esté inicializada
-    ensure_db_initialized()
-    
-    # Asegurar que la DB esté inicializada (failsafe)
-    try:
-        viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
-    except Exception as e:
-        print(f"Error de BD, intentando inicializar: {e}")
-        init_db_auto()
-        viajes = Viaje.query.order_by(Viaje.fecha_inicio.desc()).all()
-    
-    return render_template('index.html', viajes=viajes, hoy=date.today())
+# Inicializar blueprints con sus dependencias
+init_blueprints_dependencies()
+
+# Rutas principales movidas a app/routes/main.py
 
 @app.route('/viaje/<int:viaje_id>')
 def ver_viaje(viaje_id):
@@ -610,76 +627,9 @@ app.template_filter('porcentaje_presupuesto')(porcentaje_presupuesto)
 def init_db():
     return init_db_auto()
 
-# Ruta de health check para Railway
-@app.route('/health')
-def health_check():
-    try:
-        # Asegurar que la DB esté inicializada
-        ensure_db_initialized()
-        
-        # Verificar que la app y la DB están funcionando
-        viajes_count = Viaje.query.count()
-        return jsonify({
-            'status': 'healthy',
-            'database': 'connected',
-            'viajes': viajes_count,
-            'timestamp': datetime.utcnow().isoformat()
-        }), 200
-    except Exception as e:
-        print(f"❌ Health check falló: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e),
-            'timestamp': datetime.utcnow().isoformat()
-        }), 500
+# Rutas de health check y init-db movidas a app/routes/main.py
 
-# Endpoint temporal para inicializar DB manualmente
-@app.route('/init-db')
-def force_init_db():
-    try:
-        global _db_initialized
-        _db_initialized = False  # Forzar re-inicialización
-        
-        success = init_db_auto()
-        if success:
-            return jsonify({
-                'status': 'success',
-                'message': 'Base de datos inicializada correctamente',
-                'timestamp': datetime.utcnow().isoformat()
-            }), 200
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': 'Error al inicializar base de datos',
-                'timestamp': datetime.utcnow().isoformat()
-            }), 500
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Error: {str(e)}',
-            'timestamp': datetime.utcnow().isoformat()
-        }), 500
-
-# Manejo global de errores
-@app.errorhandler(500)
-def internal_error(error):
-    print(f"Error 500: {error}")
-    import traceback
-    traceback.print_exc()
-    db.session.rollback()
-    return jsonify({
-        'error': 'Error interno del servidor',
-        'message': 'Ha ocurrido un error inesperado'
-    }), 500
-
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({
-        'error': 'No encontrado',
-        'message': 'El recurso solicitado no existe'
-    }), 404
+# Manejadores de errores movidos a app/routes/main.py
 
 if __name__ == '__main__':
     # Inicializar base de datos
