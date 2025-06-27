@@ -637,124 +637,14 @@ def reordenar_todos_viajes():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/verificar-integridad', methods=['GET'])
-def verificar_integridad():
-    """Endpoint para verificar la integridad de la base de datos"""
-    try:
-        # Contar registros huérfanos (que referencian viajes que no existen)
-        
-        # Paradas huérfanas
-        paradas_huerfanas = db.session.query(Parada).outerjoin(Viaje).filter(Viaje.id.is_(None)).count()
-        
-        # Gastos huérfanos
-        gastos_huerfanos = db.session.query(Gasto).outerjoin(Viaje).filter(Viaje.id.is_(None)).count()
-        
-        # Actividades huérfanas
-        actividades_huerfanas = db.session.query(Actividad).outerjoin(Viaje).filter(Viaje.id.is_(None)).count()
-        
-        # Documentos huérfanos
-        documentos_huerfanos = db.session.query(Documento).outerjoin(Viaje).filter(Viaje.id.is_(None)).count()
-        
-        # Transportes huérfanos
-        transportes_huerfanos = db.session.query(Transporte).outerjoin(Viaje).filter(Viaje.id.is_(None)).count()
-        
-        # Alojamientos huérfanos
-        alojamientos_huerfanos = db.session.query(Alojamiento).outerjoin(Viaje).filter(Viaje.id.is_(None)).count()
-        
-        # Estadísticas generales
-        total_viajes = Viaje.query.count()
-        total_paradas = Parada.query.count()
-        total_gastos = Gasto.query.count()
-        total_actividades = Actividad.query.count()
-        total_documentos = Documento.query.count()
-        total_transportes = Transporte.query.count()
-        total_alojamientos = Alojamiento.query.count()
-        
-        integridad_ok = (paradas_huerfanas == 0 and gastos_huerfanos == 0 and 
-                        actividades_huerfanas == 0 and documentos_huerfanos == 0 and
-                        transportes_huerfanos == 0 and alojamientos_huerfanos == 0)
-        
-        return jsonify({
-            'success': True,
-            'integridad_ok': integridad_ok,
-            'estadisticas': {
-                'viajes': total_viajes,
-                'paradas': total_paradas,
-                'gastos': total_gastos,
-                'actividades': total_actividades,
-                'documentos': total_documentos,
-                'transportes': total_transportes,
-                'alojamientos': total_alojamientos
-            },
-            'registros_huerfanos': {
-                'paradas': paradas_huerfanas,
-                'gastos': gastos_huerfanos,
-                'actividades': actividades_huerfanas,
-                'documentos': documentos_huerfanos,
-                'transportes': transportes_huerfanos,
-                'alojamientos': alojamientos_huerfanos
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/admin/limpiar-huerfanos', methods=['POST'])
-def limpiar_huerfanos():
-    """Endpoint para limpiar registros huérfanos de la base de datos"""
-    try:
-        eliminados = 0
-        
-        # Eliminar paradas huérfanas
-        paradas_huerfanas = db.session.query(Parada).outerjoin(Viaje).filter(Viaje.id.is_(None)).all()
-        for parada in paradas_huerfanas:
-            db.session.delete(parada)
-            eliminados += 1
-        
-        # Eliminar gastos huérfanos
-        gastos_huerfanos = db.session.query(Gasto).outerjoin(Viaje).filter(Viaje.id.is_(None)).all()
-        for gasto in gastos_huerfanos:
-            db.session.delete(gasto)
-            eliminados += 1
-        
-        # Eliminar actividades huérfanas
-        actividades_huerfanas = db.session.query(Actividad).outerjoin(Viaje).filter(Viaje.id.is_(None)).all()
-        for actividad in actividades_huerfanas:
-            db.session.delete(actividad)
-            eliminados += 1
-        
-        # Eliminar documentos huérfanos
-        documentos_huerfanas = db.session.query(Documento).outerjoin(Viaje).filter(Viaje.id.is_(None)).all()
-        for documento in documentos_huerfanas:
-            db.session.delete(documento)
-            eliminados += 1
-        
-        # Eliminar transportes huérfanos
-        transportes_huerfanas = db.session.query(Transporte).outerjoin(Viaje).filter(Viaje.id.is_(None)).all()
-        for transporte in transportes_huerfanas:
-            db.session.delete(transporte)
-            eliminados += 1
-        
-        # Eliminar alojamientos huérfanos
-        alojamientos_huerfanas = db.session.query(Alojamiento).outerjoin(Viaje).filter(Viaje.id.is_(None)).all()
-        for alojamiento in alojamientos_huerfanas:
-            db.session.delete(alojamiento)
-            eliminados += 1
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Se eliminaron {eliminados} registros huérfanos'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Crear tablas
-with app.app_context():
-    db.create_all()
+# Crear tablas automáticamente en el primer acceso
+try:
+    # Para Flask moderno, usar app_context directamente
+    with app.app_context():
+        db.create_all()
+        print("✅ Tablas de base de datos verificadas/creadas al inicio")
+except Exception as e:
+    print(f"❌ Error al crear tablas: {e}")
 
 # Función helper para templates
 @app.template_filter('porcentaje_presupuesto')
@@ -764,4 +654,6 @@ def porcentaje_presupuesto(gastado, total):
     return min(100, (gastado / total) * 100)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Para desarrollo local y producción
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
