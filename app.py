@@ -28,17 +28,19 @@ Transporte = models['Transporte']
 Alojamiento = models['Alojamiento']
 
 # Inicializar servicios de negocio
-from app.services import database_service, viaje_service, gasto_service, actividad_service, documento_service, transporte_service
+from app.services import database_service, viaje_service, gasto_service, actividad_service, documento_service, transporte_service, alojamiento_service
 database_service.init_service(app, db, models)
 viaje_service.init_service(models, db)
 gasto_service.init_models(models, db)
 actividad_service.init_models(models, db)
 documento_service.init_models(models, db)
 transporte_service.init_models(models, db)
+alojamiento_service.init_models(models, db)
 print("🧳 GastoService inicializado")
 print("🎯 ActividadService inicializado")
 print("📄 DocumentoService inicializado")
 print("🚗 TransporteService inicializado")
+print("🏨 AlojamientoService inicializado")
 
 # Función para inicializar blueprints con dependencias
 def init_blueprints_dependencies():
@@ -80,7 +82,7 @@ def init_blueprints_dependencies():
     
     # Inicializar rutas de alojamientos
     from app.routes.alojamientos import init_alojamientos_routes
-    init_alojamientos_routes(models, db)
+    init_alojamientos_routes(alojamiento_service)
 
 # Inicializar blueprints con sus dependencias ANTES de registrarlos
 init_blueprints_dependencies()

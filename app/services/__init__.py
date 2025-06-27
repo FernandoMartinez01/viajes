@@ -9,6 +9,7 @@ from .gasto_service import GastoService, gasto_service
 from .actividad_service import ActividadService, actividad_service
 from .documento_service import DocumentoService, documento_service
 from .transporte_service import TransporteService, transporte_service
+from .alojamiento_service import AlojamientoService, alojamiento_service
 
 # Exportar servicios principales
 __all__ = [
@@ -23,5 +24,7 @@ __all__ = [
     'DocumentoService',
     'documento_service',
     'TransporteService',
-    'transporte_service'
+    'transporte_service',
+    'AlojamientoService',
+    'alojamiento_service'
 ]
