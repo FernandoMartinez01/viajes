@@ -24,6 +24,36 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# Inicializar base de datos automáticamente
+def init_db_auto():
+    """Función para inicializar DB que se ejecuta siempre"""
+    try:
+        with app.app_context():
+            # Crear el directorio si no existe (solo para SQLite local)
+            db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+            if db_uri.startswith('sqlite:///'):
+                db_path = db_uri.replace('sqlite:///', '')
+                db_dir = os.path.dirname(db_path)
+                if db_dir and not os.path.exists(db_dir):
+                    os.makedirs(db_dir, exist_ok=True)
+                    print(f"📁 Directorio de DB creado: {db_dir}")
+            
+            db.create_all()
+            print("✅ Tablas de base de datos verificadas/creadas correctamente")
+            
+            # Verificar que la conexión funciona
+            viajes_count = Viaje.query.count()
+            print(f"📊 Base de datos conectada correctamente. Viajes existentes: {viajes_count}")
+            return True
+    except Exception as e:
+        print(f"❌ Error al crear tablas: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+# Ejecutar inicialización automática
+init_db_auto()
+
 # Headers de respuesta para desarrollo
 @app.after_request
 def after_request(response):
