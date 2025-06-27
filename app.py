@@ -626,7 +626,7 @@ def reordenar_todos_viajes():
         
         for viaje in viajes:
             if len(viaje.paradas) > 1:
-                print(f"Reordenando viaje: {viaje.destino} (ID: {viaje.id})")
+                print(f"Reordenando viaje: {viaje.nombre} (ID: {viaje.id})")
                 reordenar_paradas_por_fecha(viaje.id)
                 reordenados += 1
         
@@ -653,6 +653,8 @@ def init_db():
             return True
     except Exception as e:
         print(f"❌ Error al crear tablas: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 # Ruta de health check para Railway
@@ -660,19 +662,39 @@ def init_db():
 def health_check():
     try:
         # Verificar que la app y la DB están funcionando
-        with app.app_context():
-            viajes_count = Viaje.query.count()
-            return jsonify({
-                'status': 'healthy',
-                'database': 'connected',
-                'viajes': viajes_count
-            }), 200
+        viajes_count = Viaje.query.count()
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'viajes': viajes_count
+        }), 200
     except Exception as e:
         print(f"Health check failed: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'status': 'unhealthy',
             'error': str(e)
         }), 500
+
+# Manejo global de errores
+@app.errorhandler(500)
+def internal_error(error):
+    print(f"Error 500: {error}")
+    import traceback
+    traceback.print_exc()
+    db.session.rollback()
+    return jsonify({
+        'error': 'Error interno del servidor',
+        'message': 'Ha ocurrido un error inesperado'
+    }), 500
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        'error': 'No encontrado',
+        'message': 'El recurso solicitado no existe'
+    }), 404
 
 if __name__ == '__main__':
     # Inicializar base de datos
