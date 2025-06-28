@@ -44,9 +44,11 @@ class ActividadService:
             if isinstance(fecha, str):
                 fecha = datetime.strptime(fecha, '%Y-%m-%d').date()
             
-            # Convertir hora si es string
-            if hora and isinstance(hora, str):
+            # Convertir hora si es string no vacío
+            if hora and isinstance(hora, str) and hora.strip():
                 hora = datetime.strptime(hora, '%H:%M').time()
+            else:
+                hora = None  # Si está vacío o es None, usar None
             
             # Crear la actividad
             actividad = self.Actividad(

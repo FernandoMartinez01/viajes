@@ -25,7 +25,7 @@ class AlojamientoService:
         
     def crear_alojamiento(self, viaje_id, nombre, destino, direccion, fecha_entrada, fecha_salida,
                          horario_checkin='15:00', horario_checkout='11:00', incluye_desayuno=False,
-                         numero_confirmacion='', codigo_pin='', numero_checkin='', notas=''):
+                         numero_confirmacion='', codigo_pin='', numero_checkin=''):
         """
         Crear un nuevo alojamiento para un viaje.
         
@@ -42,7 +42,6 @@ class AlojamientoService:
             numero_confirmacion (str): Número de confirmación (optional)
             codigo_pin (str): Código PIN para acceso (optional)
             numero_checkin (str): Número de check-in online (optional)
-            notas (str): Notas adicionales (optional)
             
         Returns:
             dict: Resultado con success y alojamiento_id
@@ -60,9 +59,11 @@ class AlojamientoService:
             if isinstance(horario_checkout, str):
                 horario_checkout = datetime.strptime(horario_checkout, '%H:%M').time()
             
-            # Validar fechas
-            if fecha_salida <= fecha_entrada:
-                return {'success': False, 'error': 'La fecha de salida debe ser posterior a la entrada'}
+            # Validar fechas - permitir mismo día si horarios son diferentes
+            if fecha_salida < fecha_entrada:
+                return {'success': False, 'error': 'La fecha de salida no puede ser anterior a la entrada'}
+            elif fecha_salida == fecha_entrada and horario_checkout <= horario_checkin:
+                return {'success': False, 'error': 'Si es el mismo día, el horario de checkout debe ser posterior al checkin'}
             
             # Crear el alojamiento
             alojamiento = self.Alojamiento(
@@ -77,8 +78,7 @@ class AlojamientoService:
                 incluye_desayuno=incluye_desayuno,
                 numero_confirmacion=numero_confirmacion,
                 codigo_pin=codigo_pin,
-                numero_checkin=numero_checkin,
-                notas=notas
+                numero_checkin=numero_checkin
             )
             
             self.db.session.add(alojamiento)

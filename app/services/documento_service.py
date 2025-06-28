@@ -39,9 +39,11 @@ class DocumentoService:
             dict: Resultado con success y documento_id
         """
         try:
-            # Convertir fecha si es string
-            if fecha_vencimiento and isinstance(fecha_vencimiento, str):
+            # Convertir fecha si es string no vacío
+            if fecha_vencimiento and isinstance(fecha_vencimiento, str) and fecha_vencimiento.strip():
                 fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d').date()
+            else:
+                fecha_vencimiento = None  # Si está vacío o es None, usar None
             
             # Crear el documento
             documento = self.Documento(
