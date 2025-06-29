@@ -76,43 +76,12 @@ def index():
 @main_bp.route('/health')
 def health_check():
     """Endpoint de health check para Railway y otros servicios."""
-    try:
-        # Respuesta básica sin depender de DB inicialmente
-        response_data = {
-            'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat(),
-            'app': 'viajes-pwa',
-            'version': '1.0'
-        }
-        
-        # Intentar verificar DB solo si está disponible
-        try:
-            ensure_db_initialized()
-            viajes_count = Viaje.query.count()
-            response_data.update({
-                'database': 'connected',
-                'viajes': viajes_count
-            })
-        except Exception as db_e:
-            print(f"⚠️ DB no disponible en health check: {db_e}")
-            response_data.update({
-                'database': 'initializing',
-                'note': 'Base de datos inicializando...'
-            })
-        
-        return jsonify(response_data), 200
-        
-    except Exception as e:
-        print(f"❌ Health check falló: {e}")
-        import traceback
-        traceback.print_exc()
-        
-        # Respuesta mínima en caso de error
-        return jsonify({
-            'status': 'starting',
-            'error': str(e),
-            'timestamp': datetime.utcnow().isoformat()
-        }), 200  # Devolver 200 aunque haya errores para evitar reinicio en Railway
+    # Health check súper simple - solo verifica que Flask responde
+    return jsonify({
+        'status': 'ok',
+        'app': 'viajes-pwa',
+        'timestamp': datetime.utcnow().isoformat()
+    }), 200
 
 @main_bp.route('/ping')
 def ping():
