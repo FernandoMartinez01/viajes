@@ -31,13 +31,26 @@ def health():
         'timestamp': datetime.utcnow().isoformat()
     }), 200
 
+@app.route('/status')
+def status():
+    global app_loaded
+    return jsonify({
+        'app_loaded': app_loaded,
+        'status': 'complete' if app_loaded else 'loading',
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
 @app.route('/')
 def home():
     return jsonify({
-        'message': 'Viajes PWA - Versión simplificada',
-        'status': 'running',
-        'timestamp': datetime.utcnow().isoformat()
+        'message': 'Viajes PWA - Cargando...',
+        'status': 'loading',
+        'timestamp': datetime.utcnow().isoformat(),
+        'note': 'App completa se está cargando en segundo plano'
     })
+
+# Variable para indicar si la app completa está lista
+app_loaded = False
 
 # Intentar cargar la app completa solo si es posible
 try:
@@ -132,16 +145,26 @@ try:
     # Actualizar ruta home para app completa
     @app.route('/')
     def home_full():
-        from app.routes.main import index
-        return index()
+        try:
+            from app.routes.main import index
+            return index()
+        except Exception as e:
+            print(f"Error en ruta principal: {e}")
+            return jsonify({
+                'error': 'Error cargando página principal',
+                'message': str(e),
+                'fallback': True
+            })
     
     print("✅ App completa cargada exitosamente")
+    app_loaded = True
     
 except Exception as e:
     print(f"⚠️ No se pudo cargar la app completa: {e}")
     print("🔄 Continuando con versión simplificada...")
     import traceback
     traceback.print_exc()
+    app_loaded = False
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
