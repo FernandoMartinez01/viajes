@@ -40,17 +40,9 @@ def status():
         'timestamp': datetime.utcnow().isoformat()
     })
 
-@app.route('/')
-def home():
-    return jsonify({
-        'message': 'Viajes PWA - Cargando...',
-        'status': 'loading',
-        'timestamp': datetime.utcnow().isoformat(),
-        'note': 'App completa se está cargando en segundo plano'
-    })
-
-# Variable para indicar si la app completa está lista
+# Variable para guardar información de diagnóstico
 app_loaded = False
+load_error = None
 
 # Intentar cargar la app completa solo si es posible
 try:
@@ -165,6 +157,18 @@ except Exception as e:
     import traceback
     traceback.print_exc()
     app_loaded = False
+    load_error = e
+    
+    # Solo registrar ruta de fallback si la app completa falló
+    @app.route('/')
+    def home_fallback():
+        return jsonify({
+            'message': 'Viajes PWA - App no cargada completamente',
+            'status': 'error',
+            'error': str(load_error),
+            'timestamp': datetime.utcnow().isoformat(),
+            'note': 'Revisa /status para más detalles'
+        })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
